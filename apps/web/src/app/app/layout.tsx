@@ -8,7 +8,8 @@ import { getT } from "@/lib/i18n";
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const [{ workspace, user }, { t, locale }] = await Promise.all([currentWorkspace(), getT()]);
   const nav = [
-    ["/app", t.nav.home], ["/app/office", t.nav.office], ["/app/reels", t.nav.reels], ["/app/ideas", t.nav.ideas],
+    ["/app", t.nav.home], ["/app/office", t.nav.office], ["/app/reels", t.nav.reels], ["/app/viral", t.nav.viral],
+    ["/app/strategy", t.nav.strategy], ["/app/ideas", t.nav.ideas],
     ["/app/calendar", t.nav.calendar], ["/app/meeting", t.nav.meeting], ["/app/insights", t.nav.insights], ["/app/settings", t.nav.settings],
   ] as [string, string][];
   return (

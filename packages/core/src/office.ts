@@ -1,12 +1,13 @@
 import { activities, agentRuns, and, count, db, desc, eq, gte, lessons, retros } from "@studio/db";
 import { AGENTS } from "./agents";
 import { computeBrief } from "./brief";
+import { latestStrategy } from "./helpers";
 import { levelOf, XP_PER_LESSON, XP_PER_TASK } from "./levels";
 
 /** Everything the live office needs in one call (polled by the dashboard). */
 export async function officeState(workspaceId: string) {
   const since = new Date(Date.now() - 2 * 3_600_000);
-  const [running, doneCounts, lessonCounts, recent, brief, lastRetro] = await Promise.all([
+  const [running, doneCounts, lessonCounts, recent, brief, lastRetro, strategy] = await Promise.all([
     db.select().from(agentRuns)
       .where(and(eq(agentRuns.workspaceId, workspaceId), eq(agentRuns.status, "running"), gte(agentRuns.startedAt, since)))
       .orderBy(desc(agentRuns.startedAt)),
@@ -19,6 +20,7 @@ export async function officeState(workspaceId: string) {
     db.select().from(activities).where(eq(activities.workspaceId, workspaceId)).orderBy(desc(activities.createdAt)).limit(40),
     computeBrief(workspaceId),
     db.select().from(retros).where(eq(retros.workspaceId, workspaceId)).orderBy(desc(retros.createdAt)).limit(1),
+    latestStrategy(workspaceId),
   ]);
   const lessonsBySkill = Object.fromEntries(lessonCounts.map((l) => [l.skill, Number(l.n)]));
   const agents = AGENTS.map((a) => {
@@ -37,6 +39,7 @@ export async function officeState(workspaceId: string) {
     activity: recent.map((a) => ({ at: a.createdAt.toISOString(), actor: a.actor, message: a.message })),
     brief,
     booth: { toRecord: brief.needs.filter((n) => n.kind === "record").length },
+    strategy: strategy ? { weeklyFocus: String(strategy.plan.weeklyFocus ?? ""), at: strategy.createdAt.toISOString() } : null,
     library: { lessons: lessonCounts.reduce((s, l) => s + Number(l.n), 0), lastRetro: lastRetro[0]?.createdAt.toISOString() ?? null },
   };
 }

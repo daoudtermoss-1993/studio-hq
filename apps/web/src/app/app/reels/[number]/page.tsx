@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, assets, db, desc, eq, reels } from "@studio/db";
-import { answer, approve, posted, requestChanges } from "@/app/actions/studio";
+import { answer, approve, posted, rejectAction, requestChanges } from "@/app/actions/studio";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { UploadRecording } from "@/components/UploadRecording";
 import { currentWorkspace } from "@/lib/auth";
-import { getT } from "@/lib/i18n";
+import { getT, type T } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +27,8 @@ export default async function ReelPage({ params }: { params: Promise<{ number: s
   if (!reel) notFound();
   const cover = reel.cover?.assetId ? `/api/assets/${reel.cover.assetId}` : null;
   const [srt] = await db.select().from(assets).where(and(eq(assets.reelId, reel.id), eq(assets.kind, "srt"))).orderBy(desc(assets.createdAt)).limit(1);
-  const busy = ["idea", "recorded", "editing", "approved"].includes(reel.status);
+  const busy = ["idea", "rendering", "recorded", "editing", "approved"].includes(reel.status);
+  const d = reel.decision;
   const openQs = (reel.questions ?? []).filter((q) => !q.answer);
   const fmt = (d: Date) => d.toLocaleString(locale === "ar" ? "ar-LB" : "en-GB", { timeZone: brand.timezone, weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
 
@@ -40,8 +41,28 @@ export default async function ReelPage({ params }: { params: Promise<{ number: s
         <h1 className="bidi font-display text-2xl font-extrabold">{reel.title}</h1>
         <span className="chip bg-gold text-gold-ink">{t.status[reel.status]}</span>
         {reel.pillar && <span className="chip bg-ink-3 text-muted">{reel.pillar}</span>}
+        <span className={`chip ${reel.presenter === "avatar" ? "bg-[#6c5ce7] text-white" : "bg-ink-3 text-muted"}`}>
+          {reel.presenter === "avatar" ? `🤖 ${t.presenter.avatar}` : `🎙️ ${t.presenter.self}`}
+        </span>
       </header>
       {reel.angle && <p className="bidi text-muted">{reel.angle}</p>}
+
+      {d && (
+        <Section title={`🧠 ${t.decisionTitle}`}>
+          <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            {d.why && <div className="sm:col-span-2"><dt className="font-bold text-muted">{t.why}</dt><dd className="bidi">{d.why}</dd></div>}
+            <div><dt className="font-bold text-muted">{t.goalLabel}</dt><dd>{t.goal[d.goal as keyof T["goal"]] ?? d.goal}</dd></div>
+            <div><dt className="font-bold text-muted">{t.platformsLabel}</dt><dd dir="ltr" className="text-start">{(d.platforms ?? reel.platforms).join(" · ")}</dd></div>
+            {d.monetization && <div className="sm:col-span-2"><dt className="font-bold text-muted">{t.monetization}</dt><dd className="bidi">{d.monetization}</dd></div>}
+            {(d.viral || reel.viralId) && reel.source && (
+              <div className="sm:col-span-2"><dt className="font-bold text-muted">{t.inspiredBy}</dt>
+                <dd><a href={reel.source} target="_blank" rel="noreferrer" className="break-all text-sky underline" dir="ltr">{reel.source}</a></dd></div>
+            )}
+          </dl>
+        </Section>
+      )}
+
+      {reel.status === "rendering" && <p className="card border-[#6c5ce7] text-sm">🤖 {t.twinFilming}</p>}
 
       {openQs.length > 0 && (
         <Section title={t.questions}>
@@ -61,12 +82,19 @@ export default async function ReelPage({ params }: { params: Promise<{ number: s
         </Section>
       )}
 
-      {["ready_to_record", "scripted", "recorded", "edited"].includes(reel.status) && reel.teleprompter && (
+      {["ready_to_record", "scripted", "recorded", "edited"].includes(reel.status) && reel.teleprompter && (reel.presenter === "self" || reel.status === "ready_to_record") && (
         <Section title={`🎙️ ${t.uploadRecording}`}>
           <div className="flex flex-wrap items-start gap-3">
             <Link href={`/tp/${reel.number}`} target="_blank" className="btn-ghost">{t.openTeleprompter}</Link>
             <UploadRecording reelId={reel.id} labels={{ upload: t.uploadRecording, uploading: t.uploading, uploaded: t.uploaded }} />
           </div>
+          {reel.status === "ready_to_record" && (
+            <form action={rejectAction} className="mt-4 flex flex-wrap gap-2 border-t border-line pt-3">
+              <input type="hidden" name="reelId" value={reel.id} />
+              <input name="reason" className="input max-w-md" placeholder={t.rejectReason} />
+              <button className="btn border border-coral/60 text-coral hover:bg-coral/10">✕ {t.reject}</button>
+            </form>
+          )}
         </Section>
       )}
 
@@ -92,6 +120,7 @@ export default async function ReelPage({ params }: { params: Promise<{ number: s
               </div>
               {reel.status === "edited" && (
                 <div className="space-y-3 rounded-xl border border-gold/40 bg-ink p-3">
+                  {reel.aiGenerated && <p role="note" className="rounded-lg bg-[#6c5ce7]/20 p-2 text-xs leading-relaxed">🤖 {t.aiDisclosure}</p>}
                   <form action={approve}>
                     <input type="hidden" name="reelId" value={reel.id} />
                     <button className="btn-gold w-full">✓ {t.approve}</button>
@@ -101,11 +130,17 @@ export default async function ReelPage({ params }: { params: Promise<{ number: s
                     <textarea name="changes" className="input" rows={2} placeholder={t.changesPlaceholder} required />
                     <button className="btn-ghost w-full">{t.requestChanges}</button>
                   </form>
+                  <form action={rejectAction} className="space-y-2 border-t border-line pt-3">
+                    <input type="hidden" name="reelId" value={reel.id} />
+                    <input name="reason" className="input" placeholder={t.rejectReason} />
+                    <button className="btn w-full border border-coral/60 text-coral hover:bg-coral/10">✕ {t.reject}</button>
+                  </form>
                 </div>
               )}
               {reel.status === "scheduled" && reel.publishAt && (
                 <div className="space-y-2 rounded-xl border border-ok/40 bg-ink p-3">
                   <p>{t.scheduledFor}: <b>{fmt(reel.publishAt)}</b></p>
+                  {reel.aiGenerated && <p role="note" className="rounded-lg bg-[#6c5ce7]/20 p-2 text-xs leading-relaxed">🤖 {t.aiDisclosure}</p>}
                   <form action={posted}><input type="hidden" name="reelId" value={reel.id} /><button className="btn-ghost">{t.markPosted}</button></form>
                 </div>
               )}

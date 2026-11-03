@@ -73,6 +73,28 @@ try {
     await shot("07-reel-scheduled");
   }
 
+  step("viral lab");
+  await page.goto(`${BASE}/app/viral`);
+  await waitFor(async () => (await page.locator("button:has-text('اعملو ريل إلنا')").count()) > 0, "analyzed viral finds");
+  await shot("08a-viral");
+
+  step("strategy");
+  await page.goto(`${BASE}/app/strategy`);
+  await shot("08b-strategy");
+
+  step("digital twin: switch presenter, adopt a viral video");
+  await page.goto(`${BASE}/app/settings`);
+  await page.check("input[name=presenterMode][value=avatar]");
+  await page.click("text=حفظ");
+  await page.waitForTimeout(800);
+  await page.goto(`${BASE}/app/viral`);
+  await Promise.all([page.waitForURL("**/app/reels/*"), page.locator("button:has-text('اعملو ريل إلنا')").first().click()]);
+  await waitFor(async () => (await page.locator("text=لا أوافق").count()) > 1 || (await page.locator("text=موافقة وجدولة").count()) > 0, "twin video edited", 180_000);
+  await shot("08c-twin-reel");
+  await page.fill("input[name=reason] >> nth=-1", "مش هلّق");
+  await page.locator("button:has-text('لا أوافق')").last().click();
+  await waitFor(async () => (await page.locator("text=مرفوض").count()) > 0, "rejected");
+
   step("weekly meeting");
   await page.goto(`${BASE}/app/meeting`);
   await page.click("text=اعقد الاجتماع الآن");

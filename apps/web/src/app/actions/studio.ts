@@ -3,8 +3,8 @@
 import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { answerQuestion, enqueue, markPosted } from "@studio/core";
-import { and, brandProfiles, dataImports, db, eq, lessons, memberships, reels, workspaces } from "@studio/db";
+import { addViralLink, adoptViral, answerQuestion, dismissViral, enqueue, markPosted, rejectReel } from "@studio/core";
+import { and, brandProfiles, dataImports, db, eq, lessons, memberships, reels, viralFinds, workspaces } from "@studio/db";
 import { currentWorkspace, requireUser } from "@/lib/auth";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -38,6 +38,11 @@ function brandFields(f: FormData) {
     recordingSetup: str(f, "recordingSetup"),
     timezone,
     postingTime,
+    country: (str(f, "country") || "LB").toUpperCase().slice(0, 2),
+    goals: str(f, "goals"),
+    presenterMode: ["self", "avatar", "auto"].includes(str(f, "presenterMode")) ? str(f, "presenterMode") : "self",
+    avatarId: str(f, "avatarId"),
+    voiceId: str(f, "voiceId"),
   };
 }
 
@@ -138,4 +143,61 @@ export async function importData(form: FormData) {
   const [imp] = await db.insert(dataImports).values({ workspaceId: workspace.id, kind, filename, content }).returning();
   await enqueue("analyze-import", workspace.id, { importId: imp.id });
   revalidatePath("/app/insights");
+}
+
+export async function rejectAction(form: FormData) {
+  const reel = await ownedReel(str(form, "reelId"));
+  if (!["edited", "ready_to_record", "scripted"].includes(reel.status)) return;
+  await rejectReel(reel.id, str(form, "reason"));
+  revalidatePath(`/app/reels/${reel.number}`);
+  revalidatePath("/app");
+}
+
+export async function huntNow() {
+  const { workspace } = await currentWorkspace();
+  await enqueue("hunt-viral", workspace.id, {}, { dedupeKey: "manual-hunt" });
+  revalidatePath("/app/viral");
+}
+
+export async function addViral(form: FormData) {
+  const { workspace } = await currentWorkspace();
+  const url = str(form, "url");
+  if (!/^https?:\/\/\S+$/.test(url)) return;
+  await addViralLink(workspace.id, url, str(form, "note"));
+  revalidatePath("/app/viral");
+}
+
+async function ownedFind(id: string) {
+  const { workspace } = await currentWorkspace();
+  const [f] = await db.select().from(viralFinds).where(and(eq(viralFinds.id, id), eq(viralFinds.workspaceId, workspace.id)));
+  if (!f) throw new Error("not found");
+  return f;
+}
+
+export async function analyzeFind(form: FormData) {
+  const f = await ownedFind(str(form, "findId"));
+  await enqueue("analyze-viral", f.workspaceId, { findId: f.id }, { dedupeKey: `analyze:${f.id}` });
+  revalidatePath("/app/viral");
+}
+
+export async function adoptFind(form: FormData) {
+  const f = await ownedFind(str(form, "findId"));
+  const reel = await adoptViral(f.id);
+  if (reel) {
+    await enqueue("write-reel", f.workspaceId, { reelId: reel.id }, { dedupeKey: `write:${reel.id}` });
+    redirect(`/app/reels/${reel.number}`);
+  }
+  revalidatePath("/app/viral");
+}
+
+export async function dismissFind(form: FormData) {
+  const f = await ownedFind(str(form, "findId"));
+  await dismissViral(f.id);
+  revalidatePath("/app/viral");
+}
+
+export async function runStrategy() {
+  const { workspace } = await currentWorkspace();
+  await enqueue("strategy", workspace.id, {}, { dedupeKey: "manual-strategy" });
+  revalidatePath("/app/strategy");
 }

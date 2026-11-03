@@ -66,7 +66,9 @@ export function brandContext(b: BrandProfile) {
 - Comment-keyword CTA: ${b.ctaKeyword ? `comment "${b.ctaKeyword}" to get ${b.ctaReward}` : "none"}
 - Inspiration accounts: ${b.inspirations || "-"}
 - Red lines: ${b.redLines || "-"}
-- Recording setup: ${b.recordingSetup || "-"}`;
+- Recording setup: ${b.recordingSetup || "-"}
+- Country: ${b.country} · Goals: ${b.goals || "-"}
+- Presenter: ${b.presenterMode === "avatar" ? "the owner's AI digital twin" : b.presenterMode === "auto" ? "decide per reel: owner or AI digital twin" : "the owner records"}${b.presenterMode !== "self" && !b.avatarId ? " (twin not configured yet → owner records)" : ""}`;
 }
 
 async function approvedLessons(workspaceId: string, skill: SkillId) {
@@ -87,17 +89,18 @@ export async function ask<S extends z.ZodTypeAny>(
   agent: AgentId,
   prompt: string,
   schema: S,
-  opts: { tier?: "smart" | "fast"; webSearch?: boolean; mockAs?: string } = {},
+  opts: { tier?: "smart" | "fast"; webSearch?: boolean; mockAs?: string; extraSkills?: SkillId[] } = {},
 ): Promise<z.infer<S>> {
   const def = AGENT_BY_ID[agent];
   const lessons = await approvedLessons(workspaceId, def.skill);
+  const extra = (opts.extraSkills ?? []).filter((k) => k !== def.skill).map((k) => `\n${SKILLS[k].nameEn.toUpperCase()} RULES\n${SKILLS[k].rules}`).join("\n");
   const system = `${def.role}
 
 ${brandContext(brand)}
 
 HOUSE RULES
 ${SKILLS.general.rules}
-${def.skill !== "general" ? `\n${SKILLS[def.skill].nameEn.toUpperCase()} RULES\n${SKILLS[def.skill].rules}` : ""}
+${def.skill !== "general" ? `\n${SKILLS[def.skill].nameEn.toUpperCase()} RULES\n${SKILLS[def.skill].rules}` : ""}${extra}
 ${lessons ? `\nLESSONS THE TEAM LEARNED (follow them, they override defaults)\n${lessons}` : ""}
 
 Write all human-facing text in the brand's language and dialect. Return your result only through the submit tool.`;

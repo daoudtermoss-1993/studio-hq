@@ -28,8 +28,67 @@ export const StrategyOut = z.object({
       angle: z.string(),
       source: z.string().default(""),
       questions: z.array(z.string()).default([]),
+      /** CEO decision memo for this reel */
+      presenter: z.enum(["self", "avatar"]).default("self"),
+      viralId: z.string().nullable().default(null),
+      platforms: z.array(z.string()).default([]),
+      goal: z.enum(["reach", "followers", "leads", "monetization", "trust"]).default("reach"),
+      monetization: z.string().default(""),
+      why: z.string().default(""),
     }),
   ),
+});
+
+export const ViralHuntOut = z.object({
+  youtubeQueries: z.array(z.string()).max(6),
+  finds: z
+    .array(
+      z.object({
+        platform: z.enum(["youtube", "tiktok", "instagram", "facebook", "other"]),
+        url: z.string(),
+        title: z.string(),
+        creator: z.string().default(""),
+        views: z.number().nullable().default(null),
+        creatorFollowers: z.number().nullable().default(null),
+        publishedAt: z.string().nullable().default(null),
+        description: z.string().default(""),
+        whyPicked: z.string().default(""),
+      }),
+    )
+    .max(12),
+});
+
+export const ViralAnalysisOut = z.object({
+  hookType: z.string(),
+  hookParaphrase: z.string(),
+  structure: z.array(z.object({ start: z.number(), end: z.number(), what: z.string() })).min(2),
+  format: z.string(),
+  pacing: z.string(),
+  emotion: z.string(),
+  whyItWorks: z.array(z.string()).min(1),
+  audienceSignal: z.string().default(""),
+  fitScore: z.number().min(0).max(10),
+  remake: z.object({ title: z.string(), angle: z.string(), ourTwist: z.string(), beatsOutline: z.array(z.string()).min(2) }),
+  reactIdea: z.string().default(""),
+  risks: z.array(z.string()).default([]),
+});
+
+export const StrategyPlanOut = z.object({
+  summary: z.string(),
+  platforms: z.array(
+    z.object({
+      platform: z.string(),
+      role: z.string(),
+      monetizationPath: z.string(),
+      availableInCountry: z.enum(["yes", "no", "partial", "unknown"]),
+      nextMilestone: z.string(),
+      actions: z.array(z.string()),
+    }),
+  ),
+  revenueStreams: z.array(z.object({ name: z.string(), how: z.string(), when: z.string() })),
+  presenterPolicy: z.string(),
+  weeklyFocus: z.string(),
+  risks: z.array(z.string()).default([]),
 });
 
 export const HooksOut = z.object({
@@ -124,7 +183,7 @@ export const CommunityOut = z.object({
 
 export const MeetingOut = z.object({
   lessons: z
-    .array(z.object({ skill: z.enum(["general", "writing", "strategy", "trends", "editing", "analytics"]), text: z.string(), evidence: z.string() }))
+    .array(z.object({ skill: z.enum(["general", "writing", "strategy", "trends", "editing", "analytics", "viral", "monetization"]), text: z.string(), evidence: z.string() }))
     .max(10),
   summary: z.string(),
   nextWeekFocus: z.string(),
@@ -143,3 +202,6 @@ export type ChangeRoute = z.infer<typeof ChangeRouteOut>;
 export type Analyst = z.infer<typeof AnalystOut>;
 export type Community = z.infer<typeof CommunityOut>;
 export type Meeting = z.infer<typeof MeetingOut>;
+export type ViralHunt = z.infer<typeof ViralHuntOut>;
+export type ViralAnalysis = z.infer<typeof ViralAnalysisOut>;
+export type StrategyPlan = z.infer<typeof StrategyPlanOut>;

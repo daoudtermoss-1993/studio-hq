@@ -2,7 +2,7 @@
  * The team's house know-how. Each skill is shared by one or more agents; approved lessons
  * from the weekly meeting are appended to it at run time (that is how agents "level up").
  */
-export type SkillId = "general" | "writing" | "strategy" | "trends" | "editing" | "analytics";
+export type SkillId = "general" | "writing" | "strategy" | "trends" | "editing" | "analytics" | "viral" | "monetization";
 
 export const SKILLS: Record<SkillId, { nameAr: string; nameEn: string; rules: string }> = {
   general: {
@@ -50,6 +50,35 @@ mark unconfirmed. Always say what OUR angle is (local angle, demo, personal test
 Final duration within ±15 % of target. The hook starts at 0.0 s. Subtitles in the safe zone.
 Cover text ≤ 5 words, readable on a phone grid, consistent position across reels; avoid the bottom 20 %
 and right 15 % of the frame.`,
+  },
+  viral: {
+    nameAr: "الفيرال",
+    nameEn: "Viral",
+    rules: `WHAT WE TAKE: the recipe, never the dish. Study why a video spread (hook type, beat structure, pacing,
+on-screen text, emotion, format, comment patterns), then build an ORIGINAL version with our angle, our examples,
+our presenter. NEVER reuse another creator's footage, audio or exact wording (max 5 consecutive words);
+the only allowed reuse is the platform's own Remix / Stitch / Duet features, which credit the creator.
+Instagram (Apr 2026) removes reposts without meaningful transformation from recommendations; Facebook (Jul 2025)
+demonetizes repeat reposters; speed changes or a credit screenshot are NOT transformation.
+SIGNALS: velocity (views per hour since posting) and outlier ratio (views ÷ creator followers; > 3 = the idea,
+not the creator, carried it) matter more than raw views. Prefer finds < 7 days old in our niche or an adjacent one.`,
+  },
+  monetization: {
+    nameAr: "الربح",
+    nameEn: "Monetization",
+    rules: `VERIFIED FACTS (re-check with web search when deciding; rules change):
+- YouTube Partner Program: 1,000 subscribers + 10M valid Shorts views in 90 days, or 4,000 watch hours in 12 months
+  (from 1 Feb 2027: 20M Shorts views / 8,000 hours). Creators keep 45% of their Shorts pool share; Shorts RPM is
+  typically ~$0.03–0.10 per 1,000 views. Fan-funding tier: 500 subs + 3M Shorts views in 90 days.
+  Mass-produced, repetitive "inauthentic" content is not monetizable (since Jul 2025).
+- TikTok Creator Rewards: only US, CA, UK, DE, FR, IT, ES, AU — NOT the Middle East; videos > 1 min, 10k followers,
+  100k views in 30 days. Elsewhere: LIVE gifts (from 1k followers), brand deals, TikTok Shop affiliate where available.
+- Instagram / Facebook: program availability depends on the country — verify for the brand's country before planning.
+- Realistic AI people/voices (including a digital twin) must be labeled: TikTok AIGC toggle, YouTube Studio
+  disclosure (auto-labels since May 2026; a label alone does not affect monetization), Meta "AI info".
+LEVERS THAT WORK EVERYWHERE: comment-keyword lead magnet → DM → email/WhatsApp list → own offer (course, service,
+consulting, templates); brand deals once engagement is steady (media kit); affiliate links; YouTube ad revenue
+as a long-term bonus. Plan with the brand's country and goals; never promise income figures.`,
   },
   analytics: {
     nameAr: "الأرقام والمجتمع",

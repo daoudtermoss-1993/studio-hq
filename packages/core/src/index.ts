@@ -1,4 +1,6 @@
 export * from "./agents";
+export * from "./avatar";
+export * from "./helpers";
 export * from "./ai";
 export * from "./brief";
 export * from "./env";
@@ -10,6 +12,9 @@ export * from "./queue";
 export * from "./schemas";
 export * from "./skills";
 export * from "./storage";
+export * from "./strategy";
 export * from "./team";
 export * from "./time";
 export * from "./video";
+export * from "./viral";
+export * from "./youtube";

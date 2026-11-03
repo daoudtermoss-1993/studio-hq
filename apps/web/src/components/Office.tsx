@@ -7,6 +7,7 @@ type Agent = OfficeState["agents"][number];
 export interface OfficeLabels {
   library: string; lessonsLearned: string; noMeetingYet: string; lastMeeting: string; meetingRoom: string;
   weeklyMeeting: string; booth: string; you: string; toRecord: string; working: string; tasks: string;
+  strategyRoom: string; weeklyFocus: string;
 }
 
 const FRAMES = {
@@ -126,8 +127,9 @@ export function Office({ initial, locale, labels, poll = true }: { initial: Offi
   }, [poll]);
 
   const by = Object.fromEntries(s.agents.map((a) => [a.id, a]));
-  const order = ["ceo", "trend-scout", "content-strategist", "booth", "hook-writer", "scriptwriter", "fact-checker", "video-editor",
-    "caption-writer", "cover-designer", "scheduler", "repurposer", "analyst", "community-manager", "library", "meeting"];
+  const order = ["ceo", "strategy", "trend-scout", "viral-hunter", "viral-analyst", "content-strategist", "hook-writer", "scriptwriter",
+    "fact-checker", "booth", "digital-twin", "video-editor", "caption-writer", "cover-designer", "scheduler", "repurposer",
+    "analyst", "community-manager", "library", "meeting"];
   const onAir = s.booth.toRecord > 0;
   const dateFmt = (iso: string) => new Date(iso).toLocaleDateString(locale === "ar" ? "ar-LB" : "en-GB", { weekday: "long", day: "numeric", month: "short" });
 
@@ -143,6 +145,18 @@ export function Office({ initial, locale, labels, poll = true }: { initial: Offi
                 <Sprite look={ME} active={onAir} />
                 <Desk on={onAir} mic />
                 <span className="mt-3 rounded-sm bg-[#0a0c1a]/80 px-2 text-[13px] font-bold">{labels.you}</span>
+              </div>
+            </Room>
+          );
+        if (id === "strategy")
+          return (
+            <Room key={id} title={labels.strategyRoom} floor="gold">
+              <div className="mx-3 mt-4 rounded border-4 border-[#5a3d1e] bg-[#f6f3ec] p-2 text-[#1b2140] shadow-[0_4px_0_#2b1c0d]">
+                <p className="font-pixel text-[8px] text-[#8f600a]">{labels.weeklyFocus.toUpperCase()}</p>
+                <p className="bidi mt-1 line-clamp-4 text-[13px] font-bold leading-snug">{s.strategy?.weeklyFocus || "—"}</p>
+              </div>
+              <div className="mt-3 flex justify-center gap-2" aria-hidden>
+                {["#ff4d5e", "#47d18c", "#7aa2ff"].map((c) => <div key={c} className="h-6 w-6 border-2 border-[#141830]" style={{ background: c }} />)}
               </div>
             </Room>
           );

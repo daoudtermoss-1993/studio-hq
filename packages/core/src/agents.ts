@@ -3,6 +3,9 @@ import type { SkillId } from "./skills";
 export type AgentId =
   | "ceo"
   | "trend-scout"
+  | "viral-hunter"
+  | "viral-analyst"
+  | "digital-twin"
   | "content-strategist"
   | "hook-writer"
   | "scriptwriter"
@@ -29,7 +32,7 @@ export interface AgentDef {
 export const AGENTS: AgentDef[] = [
   {
     id: "ceo", nameAr: "المدير", nameEn: "CEO", roomAr: "مكتب المدير", roomEn: "CEO office", skill: "general",
-    role: "You are the CEO of a content studio run by AI agents. You coordinate the team, route change requests, and run the weekly meeting where the team learns from results and corrections.",
+    role: "You are the CEO of a content studio run by AI agents. You think through every step: what to make, who presents it, which platform it serves, and how each platform turns attention into income for this brand's country. You coordinate the team, write the decision behind every reel, route change requests, and run the weekly meeting where the team learns from results, corrections and rejections. The owner approves or rejects the final result.",
     look: { hair: "#cfcfcf", skin: "#c68a5e", body: "#1e2233", tie: "#ff4d5e", floor: "gold" },
   },
   {
@@ -38,8 +41,23 @@ export const AGENTS: AgentDef[] = [
     look: { hair: "#2b1b10", skin: "#e0ac82", body: "#4f7cff", floor: "blue" },
   },
   {
+    id: "viral-hunter", nameAr: "صياد الفيرال", nameEn: "Viral hunter", roomAr: "غرفة الفيرال", roomEn: "Viral room", skill: "viral",
+    role: "You find short videos that are spreading fast in the brand's niche and adjacent niches (last 7 days), on YouTube Shorts, TikTok and Instagram Reels. You report links and reported numbers only; you never download or reuse anyone's video.",
+    look: { hair: "#f1c40f", skin: "#d9a072", body: "#ff4d8d", floor: "blue" },
+  },
+  {
+    id: "viral-analyst", nameAr: "محلّل الفيرال", nameEn: "Viral analyst", roomAr: "مختبر التحليل", roomEn: "Analysis lab", skill: "viral",
+    role: "You break down why a video went viral (hook, beats, pacing, emotion, format, audience signals) and design an ORIGINAL remake for our brand: our angle, our examples, our presenter. You never copy footage or wording.",
+    look: { hair: "#2c3e50", skin: "#eec19c", body: "#00b894", floor: "green" },
+  },
+  {
+    id: "digital-twin", nameAr: "التوأم الرقمي", nameEn: "Digital twin", roomAr: "استوديو التوأم", roomEn: "Twin studio", skill: "editing",
+    role: "You are the owner's AI digital twin: you present reels in the owner's face and voice through the avatar provider.",
+    look: { hair: "#111111", skin: "#b8805a", body: "#6c5ce7", floor: "gold" },
+  },
+  {
     id: "content-strategist", nameAr: "الاستراتيجي", nameEn: "Strategist", roomAr: "غرفة الأفكار", roomEn: "Ideas room", skill: "strategy",
-    role: "You choose which ideas become reels, keep the idea backlog, balance pillars and decide each reel's angle (a one-sentence promise).",
+    role: "You choose which ideas and viral references become reels, keep the idea backlog, balance pillars, and for each reel decide the angle (a one-sentence promise), the presenter, the platforms, the goal and the monetization angle, following the CEO's current strategy.",
     look: { hair: "#111111", skin: "#8d5a3b", body: "#2fb57a", floor: "wood" },
   },
   {

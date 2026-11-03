@@ -67,13 +67,20 @@ export const brandProfiles = pgTable("brand_profiles", {
   recordingSetup: text("recording_setup").notNull().default(""),
   timezone: text("timezone").notNull().default("Asia/Beirut"),
   postingTime: text("posting_time").notNull().default("19:30"),
+  country: text("country").notNull().default("LB"),
+  goals: text("goals").notNull().default(""),
+  /** self = owner records · avatar = digital twin presents · auto = the CEO decides per reel */
+  presenterMode: text("presenter_mode").notNull().default("self"),
+  avatarProvider: text("avatar_provider").notNull().default("heygen"),
+  avatarId: text("avatar_id").notNull().default(""),
+  voiceId: text("voice_id").notNull().default(""),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
 // ---------- content ----------
 
 export const reelStatus = pgEnum("reel_status", [
-  "idea", "scripted", "ready_to_record", "recorded", "editing", "edited", "approved", "scheduled", "posted",
+  "idea", "scripted", "ready_to_record", "rendering", "recorded", "editing", "edited", "approved", "scheduled", "posted", "rejected",
 ]);
 
 export const reels = pgTable(
@@ -101,6 +108,13 @@ export const reels = pgTable(
     results: jsonb("results").$type<any>(),
     questions: jsonb("questions").$type<{ id: string; text: string; answer?: string }[]>().notNull().default([]),
     notes: text("notes").notNull().default(""),
+    /** who appears in the video: the owner or the digital twin */
+    presenter: text("presenter").notNull().default("self"),
+    aiGenerated: boolean("ai_generated").notNull().default(false),
+    viralId: text("viral_id"),
+    /** the CEO's written decision: why this reel, platforms, goal, monetization angle */
+    decision: jsonb("decision").$type<any>(),
+    avatarJob: jsonb("avatar_job").$type<any>(),
     publishAt: timestamp("publish_at", { withTimezone: true }),
     rawAssetId: text("raw_asset_id"),
     finalAssetId: text("final_asset_id"),
@@ -138,6 +152,45 @@ export const trendReports = pgTable(
   { id: id(), workspaceId: ws(), date: text("date").notNull(), items: jsonb("items").$type<any[]>().notNull(), createdAt: createdAt() },
   (t) => [uniqueIndex("trends_ws_date_uq").on(t.workspaceId, t.date)],
 );
+
+// ---------- viral lab & strategy ----------
+
+export const viralStatus = pgEnum("viral_status", ["new", "analyzed", "adopted", "dismissed"]);
+
+export const viralFinds = pgTable(
+  "viral_finds",
+  {
+    id: id(),
+    workspaceId: ws(),
+    platform: text("platform").notNull(), // youtube | tiktok | instagram | facebook | other
+    url: text("url").notNull(),
+    title: text("title").notNull().default(""),
+    creator: text("creator").notNull().default(""),
+    views: integer("views"),
+    likes: integer("likes"),
+    comments: integer("comments"),
+    creatorFollowers: integer("creator_followers"),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    /** views per hour since publishing */
+    velocity: integer("velocity"),
+    /** views ÷ creator followers: > 3 means it beat the creator's normal reach */
+    outlier: integer("outlier"),
+    source: text("source").notNull().default("web"), // youtube-api | web | manual
+    description: text("description").notNull().default(""),
+    analysis: jsonb("analysis").$type<any>(),
+    status: viralStatus("status").notNull().default("new"),
+    reelId: text("reel_id"),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("viral_ws_url_uq").on(t.workspaceId, t.url), index("viral_ws_status_idx").on(t.workspaceId, t.status)],
+);
+
+export const strategyReports = pgTable("strategy_reports", {
+  id: id(),
+  workspaceId: ws(),
+  plan: jsonb("plan").$type<any>().notNull(),
+  createdAt: createdAt(),
+});
 
 // ---------- the team ----------
 
@@ -225,3 +278,4 @@ export type ReelStatus = (typeof reelStatus.enumValues)[number];
 export type Asset = typeof assets.$inferSelect;
 export type Job = typeof jobs.$inferSelect;
 export type Lesson = typeof lessons.$inferSelect;
+export type ViralFind = typeof viralFinds.$inferSelect;

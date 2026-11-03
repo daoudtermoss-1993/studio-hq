@@ -29,6 +29,8 @@ export function mockAgent(agent: string, prompt: string): unknown {
       };
     case "content-strategist": {
       const n = pickCount(prompt);
+      const viral = [...prompt.matchAll(/VIRAL#([\w-]+)/g)].map((m) => m[1]);
+      const mode = /PRESENTER MODE: (\w+)/.exec(prompt)?.[1] ?? "self";
       return {
         newIdeas: [{ pillar: "أدوات", text: "مقارنة أداتين للمونتاج", angle: "مين أسرع؟", source: "", score: 12 }],
         picks: Array.from({ length: n }, (_, i) => ({
@@ -37,9 +39,51 @@ export function mockAgent(agent: string, prompt: string): unknown {
           angle: "وعد واضح بأقل من دقيقة",
           source: "trend",
           questions: [],
+          presenter: mode === "avatar" ? "avatar" : mode === "auto" ? (i % 2 ? "self" : "avatar") : "self",
+          viralId: viral[i] ?? null,
+          platforms: ["instagram", "tiktok", "youtube"],
+          goal: i % 2 ? "leads" : "reach",
+          monetization: i % 2 ? "كلمة «مدير» بالتعليقات ← رسالة خاصة ← قائمة واتساب" : "انتشار يقرّب من شروط YouTube",
+          why: "فكرة منتشرة هالأسبوع وبتناسب محور الأدوات",
         })),
       };
     }
+    case "viral-hunter":
+      return {
+        youtubeQueries: ["AI tools", "ذكاء اصطناعي"],
+        finds: [
+          { platform: "tiktok", url: `https://www.tiktok.com/@creator/video/7${counter}01`, title: "I replaced my team with AI", creator: "@creator", views: 2400000, creatorFollowers: 80000, publishedAt: new Date(Date.now() - 2 * 86_400_000).toISOString(), description: "talking head, 35s", whyPicked: "outlier ×30" },
+          { platform: "instagram", url: `https://www.instagram.com/reel/C${counter}xyz/`, title: "3 AI tools nobody talks about", creator: "@tools", views: 900000, creatorFollowers: 300000, publishedAt: new Date(Date.now() - 86_400_000).toISOString(), description: "list format", whyPicked: "fast growth" },
+        ],
+      };
+    case "viral-analyst":
+      return {
+        hookType: "bold claim",
+        hookParaphrase: "ادعاء صادم بأول ثانيتين عن استبدال فريق كامل",
+        structure: [{ start: 0, end: 2, what: "ادعاء صادم" }, { start: 2, end: 15, what: "إثبات على الشاشة" }, { start: 15, end: 30, what: "3 أمثلة سريعة" }, { start: 30, end: 35, what: "دعوة للتعليق" }],
+        format: "talking head + screen recording",
+        pacing: "قص كل 2-3 ثواني",
+        emotion: "فضول + خوف من التأخر",
+        whyItWorks: ["الهوك بيوقف التمرير", "إثبات بصري سريع", "دعوة واضحة للتعليق"],
+        audienceSignal: "التعليقات عم تطلب الأدوات",
+        fitScore: 9,
+        remake: { title: "فريقي كلّو AI… وهيك بشتغل", angle: "تجربتي الحقيقية بالعربي", ourTwist: "مثال من شغلنا ولقطة من المكتب المباشر", beatsOutline: ["ادعاء بأول ثانيتين", "لقطة المكتب", "3 موظفين بالأسماء", "اكتب «مدير»"] },
+        reactIdea: "Stitch: هيدا صح بس ناقصو شغلة…",
+        risks: ["ما منستعمل ولا لقطة من الفيديو الأصلي"],
+      };
+    case "ceo-strategy":
+      return {
+        summary: "نركّز على YouTube Shorts للربح الطويل، وعلى Instagram لبناء قائمة leads، وTikTok للانتشار بس",
+        platforms: [
+          { platform: "youtube", role: "ربح طويل المدى", monetizationPath: "YPP: 1,000 مشترك + 10M مشاهدة Shorts", availableInCountry: "yes", nextMilestone: "100 مشترك", actions: ["3 Shorts بالأسبوع", "عنوان قوي لكل Short"] },
+          { platform: "tiktok", role: "انتشار", monetizationPath: "Creator Rewards غير متاح بلبنان: LIVE وعروض تجارية", availableInCountry: "no", nextMilestone: "1,000 متابع لفتح LIVE", actions: ["نفس الريلز مع هوك أسرع"] },
+          { platform: "instagram", role: "leads وعروض تجارية", monetizationPath: "كلمة التعليق ← رسالة خاصة ← عرض", availableInCountry: "partial", nextMilestone: "100 lead", actions: ["كلمة «مدير» بكل ريل"] },
+        ],
+        revenueStreams: [{ name: "قائمة leads", how: "برومبت مجاني مقابل رقم واتساب", when: "من هلّق" }, { name: "عروض تجارية", how: "media kit بعد 10k متابع متفاعل", when: "بعد 3 أشهر" }],
+        presenterPolicy: "التوأم للشرح والأخبار، إنت للقصص الشخصية",
+        weeklyFocus: "سلسلة «فريقي كلّو AI» 3 أجزاء",
+        risks: ["لازم تحط علامة AI على فيديوهات التوأم"],
+      };
     case "hook-writer":
       return {
         hooks: [

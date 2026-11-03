@@ -7,7 +7,11 @@ export type JobType =
   | "process-recording"
   | "approve-reel"
   | "weekly-meeting"
-  | "analyze-import";
+  | "analyze-import"
+  | "render-avatar"
+  | "hunt-viral"
+  | "analyze-viral"
+  | "strategy";
 
 /**
  * Enqueue a background job.

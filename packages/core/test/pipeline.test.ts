@@ -4,11 +4,12 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
-  agentRuns, and, assets, brandProfiles, db, eq, jobs, lessons, memberships, pool, reels, runMigrations, sql, users, workspaces,
+  agentRuns, and, assets, brandProfiles, db, eq, jobs, lessons, memberships, pool, reels, runMigrations, sql, strategyReports, users,
+  viralFinds, workspaces,
 } from "@studio/db";
 import {
-  approveReel, claimNext, complete, computeBrief, dailyRun, enqueue, levelOf, nextSlot, officeState, registerRecording,
-  runJob, storage, weeklyMeeting, zonedToUtc,
+  addViralLink, adoptViral, approveReel, claimNext, complete, computeBrief, dailyRun, enqueue, levelOf, nextSlot, officeState,
+  registerRecording, rejectReel, runJob, storage, weeklyMeeting, writeReel, zonedToUtc,
 } from "../src";
 
 let wsId = "";
@@ -75,6 +76,28 @@ describe("full reel lifecycle (mock AI, real DB, real ffmpeg)", () => {
     expect(brief.needs.filter((n) => n.kind === "record")).toHaveLength(2);
   });
 
+  it("the CEO wrote a platform strategy and every reel has a decision", async () => {
+    const [plan] = await db.select().from(strategyReports).where(eq(strategyReports.workspaceId, wsId));
+    expect(plan.plan.platforms.length).toBeGreaterThan(0);
+    const all = await db.select().from(reels).where(eq(reels.workspaceId, wsId));
+    for (const r of all) {
+      expect(r.decision?.goal).toBeTruthy();
+      expect(r.decision?.platforms?.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("viral hunter found and analyzed videos; one became a reel of ours", async () => {
+    const finds = await db.select().from(viralFinds).where(eq(viralFinds.workspaceId, wsId));
+    expect(finds.length).toBeGreaterThanOrEqual(4);
+    expect(finds.some((f) => f.source === "youtube-api" && (f.velocity ?? 0) > 0)).toBe(true);
+    expect(finds.filter((f) => f.analysis).length).toBeGreaterThan(0);
+    const adopted = finds.filter((f) => f.status === "adopted");
+    expect(adopted.length).toBeGreaterThan(0);
+    const [r] = await db.select().from(reels).where(eq(reels.id, adopted[0].reelId!));
+    expect(r.viralId).toBe(adopted[0].id);
+    expect(r.source).toBe(adopted[0].url);
+  });
+
   it("a second daily run does not over-produce", async () => {
     await dailyRun(wsId);
     const all = await db.select().from(reels).where(eq(reels.workspaceId, wsId));
@@ -116,6 +139,31 @@ describe("full reel lifecycle (mock AI, real DB, real ffmpeg)", () => {
     const [first] = await db.select().from(reels).where(and(eq(reels.workspaceId, wsId), eq(reels.number, 1)));
     const next = await nextSlot(wsId, b);
     expect((+next - +first.publishAt!) / 86_400_000).toBeCloseTo(2, 0);
+  });
+
+  it("the digital twin presents a reel: render → edit → needs approval, flagged as AI", async () => {
+    await db.update(brandProfiles).set({ presenterMode: "avatar" }).where(eq(brandProfiles.workspaceId, wsId));
+    const f = await addViralLink(wsId, "https://www.tiktok.com/@someone/video/123", "manual find");
+    await drain(); // analyze-viral
+    const reel = await adoptViral(f!.id);
+    expect(reel?.presenter).toBe("avatar");
+    await writeReel(reel!.id);
+    await drain(); // render-avatar → process-recording
+    const [done] = await db.select().from(reels).where(eq(reels.id, reel!.id));
+    expect(done.status).toBe("edited");
+    expect(done.aiGenerated).toBe(true);
+    expect(done.finalAssetId).toBeTruthy();
+    await db.update(brandProfiles).set({ presenterMode: "self" }).where(eq(brandProfiles.workspaceId, wsId));
+  });
+
+  it("the owner can reject a reel; it leaves the brief", async () => {
+    const [r] = await db.select().from(reels).where(and(eq(reels.workspaceId, wsId), eq(reels.status, "edited")));
+    await rejectReel(r.id, "الموضوع مش لجمهوري");
+    const [after] = await db.select().from(reels).where(eq(reels.id, r.id));
+    expect(after.status).toBe("rejected");
+    expect(after.notes).toContain("مرفوض");
+    const brief = await computeBrief(wsId);
+    expect(brief.needs.some((n) => n.reelId === r.id)).toBe(false);
   });
 
   it("weekly meeting proposes lessons; approving them levels the team up", async () => {

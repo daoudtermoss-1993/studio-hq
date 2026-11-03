@@ -1,5 +1,7 @@
 import type { Job } from "@studio/db";
-import { analyzeImport, approveReel, dailyRun, processRecording, weeklyMeeting, writeReel } from "./pipeline";
+import { analyzeImport, approveReel, dailyRun, processRecording, renderAvatar, weeklyMeeting, writeReel } from "./pipeline";
+import { ceoStrategy } from "./strategy";
+import { analyzeViral, huntViral } from "./viral";
 
 /** Executes one background job. Throwing makes the queue retry with backoff. */
 export async function runJob(job: Job) {
@@ -18,6 +20,14 @@ export async function runJob(job: Job) {
       return weeklyMeeting(job.workspaceId!);
     case "analyze-import":
       return analyzeImport(p.importId);
+    case "render-avatar":
+      return renderAvatar(p.reelId);
+    case "hunt-viral":
+      return huntViral(job.workspaceId!);
+    case "analyze-viral":
+      return analyzeViral(p.findId);
+    case "strategy":
+      return ceoStrategy(job.workspaceId!);
     default:
       throw new Error(`unknown job type ${job.type}`);
   }

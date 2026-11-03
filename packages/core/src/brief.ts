@@ -1,7 +1,7 @@
 import { asc, brandProfiles, count, db, eq, and, lessons, reels, type ReelStatus } from "@studio/db";
 import { localDate } from "./time";
 
-export const PIPELINE: ReelStatus[] = ["idea", "scripted", "ready_to_record", "recorded", "editing", "edited", "approved", "scheduled", "posted"];
+export const PIPELINE: ReelStatus[] = ["idea", "scripted", "ready_to_record", "rendering", "recorded", "editing", "edited", "approved", "scheduled", "posted"];
 
 export type NeedKind = "record" | "approve" | "answer" | "post" | "lessons";
 export interface Need {
@@ -23,7 +23,7 @@ export async function computeBrief(workspaceId: string) {
   for (const r of all.filter((r) => r.status === "ready_to_record")) needs.push({ kind: "record", reelNumber: r.number, reelId: r.id, title: r.title });
   for (const r of all.filter((r) => r.status === "edited")) needs.push({ kind: "approve", reelNumber: r.number, reelId: r.id, title: r.title });
   for (const r of all) {
-    if (r.status === "posted") continue;
+    if (r.status === "posted" || r.status === "rejected") continue;
     for (const q of r.questions ?? []) if (!q.answer) needs.push({ kind: "answer", reelNumber: r.number, reelId: r.id, title: q.text, questionId: q.id });
   }
   for (const r of all.filter((r) => r.status === "scheduled" && r.publishAt && localDate(tz, r.publishAt) <= today)) {

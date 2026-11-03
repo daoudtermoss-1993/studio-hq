@@ -14,6 +14,13 @@ Monorepo (pnpm): `apps/web` (Next.js 15), `apps/worker` (job runner), `packages/
 - UI strings live in `apps/web/src/lib/i18n.ts` (ar + en). Arabic is the default and the layout is RTL:
   use logical Tailwind classes (`ms-`, `pe-`, `start-`), and `bidi` on user/AI text.
 - Agents never post or DM on platforms; they draft. Keep it that way.
+- Viral lab (`viral.ts`, `youtube.ts`): we keep links + numbers and learn the structure; never download or reuse
+  other creators' footage, audio or wording. Remakes must be original (fact-checker enforces it).
+- Digital twin (`avatar.ts`): provider behind `startAvatarVideo` / `avatarStatus`; renders are polled by re-enqueued
+  `render-avatar` jobs (never block the worker). Twin videos set `reels.ai_generated` → the UI reminds the owner to
+  turn on each platform's AI label.
+- CEO strategy (`strategy.ts`) + per-reel `decision` memo; monetization facts live in the `monetization` skill —
+  keep them dated and re-verified.
 
 ## Checks before pushing
 - `pnpm -r typecheck`
