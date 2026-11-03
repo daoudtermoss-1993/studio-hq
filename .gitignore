@@ -1,0 +1,10 @@
+node_modules/
+.next/
+.env
+.env.local
+data/
+*.log
+apps/web/test-results/
+apps/web/playwright-report/
+.DS_Store
+__pycache__/
