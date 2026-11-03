@@ -10,6 +10,7 @@ const TOPICS = [
   "غلطة بتعملها كل يوم بـ ChatGPT",
   "كيف تصوّر ريل بموبايل بس",
 ];
+import { mockEvalSet, mockJudge, mockKnowledge, mockReceptionist } from "./mock-clients";
 import { mockHomepage } from "./mock-site";
 
 let counter = 0;
@@ -133,6 +134,30 @@ export function mockAgent(agent: string, prompt: string): unknown {
       };
     case "security-reviewer":
       return { verdict: "approve", issues: [{ severity: "medium", issue: "رقم الزبون بينحفظ بالجدول", fix: "حذف الأرقام بعد 30 يوم" }], summary: "آمن للديمو" };
+    case "knowledge-engineer":
+      return mockKnowledge(prompt);
+    case "receptionist":
+      return mockReceptionist(prompt);
+    case "qa-set":
+      return mockEvalSet();
+    case "qa-judge":
+      return mockJudge(prompt);
+    case "care-coordinator":
+      return { templates: [
+        { name: "appointment_reminder", category: "UTILITY", language: "ar", body: "مرحبا {{1}}، تذكير بموعدك {{2}}. ردّ على هالرسالة إذا بدك تغيّر الموعد.", example: "ريم، الخميس 5:00" },
+        { name: "review_request", category: "UTILITY", language: "ar", body: "شكراً {{1}} إنك زرتنا 🌿 رأيك بيساعدنا: {{2}}", example: "ريم، https://g.page/r/…" },
+        { name: "checkup_reactivation", category: "MARKETING", language: "ar", body: "مرحبا {{1}} 🙂 صارلك أكتر من 6 أشهر من آخر فحص. حابب نحجزلك موعد تنظيف؟ ردّ STOP لوقف الرسائل.", example: "ريم" },
+      ] };
+    case "reputation-manager": {
+      const ids = [...prompt.matchAll(/"id":"([^"]+)"/g)].map((m) => m[1]);
+      return { replies: ids.map((id, i) => ({ id, reply: i % 2 ? "منعتذر عن التجربة 🙏 بنحب نحكي معك مباشرة ونصلّح الموضوع، فيك تبعتلنا عالواتساب؟" : "شكراً كتير عكلامك الحلو 🌿 بيسعدنا نشوفك دايماً!", flag: i % 2 ? "شكوى: الأفضل صاحب العيادة يتصل" : "" })) };
+    }
+    case "growth-marketer": {
+      const n = Number(prompt.match(/(\d+) opted-in/)?.[1] ?? 0);
+      return { name: "فحص الـ 6 أشهر", segment: `${n} شخص وافقو عالرسائل وصارلن أكتر من 6 أشهر ما إجو`, why: "الفحص الدوري كل 6 أشهر", template: { name: "checkup_reactivation", language: "ar", body: "مرحبا {{1}} 🙂 صارلك أكتر من 6 أشهر من آخر فحص. حابب نحجزلك موعد تنظيف؟ ردّ STOP لوقف الرسائل." }, expected: "تقدير: بين 5% و15% بيحجزو (مش رقم مثبت)" };
+    }
+    case "client-success":
+      return { headline: "المساعد ردّ على كل الرسائل، وفي منها بعد الدوام", summary: "تقرير الشهر من الأرقام المقاسة.", wins: ["ولا رسالة بقيت بلا رد"], issues: ["في أسئلة عن التأمين لازم تنضاف"], next: ["زيدو التأمينات لملف المعرفة", "شغّلو التذكير قبل الموعد"] };
     case "opportunity-scout":
       return { businesses: [{ name: "عيادة النخبة للأسنان", website: "https://nokhba-dental.example", phone: "+961 1 000 004", address: "الأشرفية، بيروت", sourceUrl: "https://nokhba-dental.example", why: "موقع قديم بلا حجز" }] };
     case "web-auditor": {

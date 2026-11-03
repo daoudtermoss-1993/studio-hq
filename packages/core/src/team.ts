@@ -22,9 +22,10 @@ export async function runAgent<T>(
   task: string,
   reelId: string | null,
   fn: (h: RunHandle) => Promise<T>,
+  opts: { quiet?: boolean } = {},
 ): Promise<T> {
   const [run] = await db.insert(agentRuns).values({ workspaceId, agent, task, reelId }).returning();
-  await log(workspaceId, agent, `بلّش: ${task}`);
+  if (!opts.quiet) await log(workspaceId, agent, `بلّش: ${task}`);
   const usage = { input: 0, output: 0 };
   const h: RunHandle = {
     runId: run.id,
@@ -42,7 +43,7 @@ export async function runAgent<T>(
       .update(agentRuns)
       .set({ status: "done", finishedAt: new Date(), inputTokens: usage.input, outputTokens: usage.output, tool: "" })
       .where(eq(agentRuns.id, run.id));
-    await log(workspaceId, agent, `خلّص: ${task}`);
+    if (!opts.quiet) await log(workspaceId, agent, `خلّص: ${task}`);
     return result;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -93,6 +94,10 @@ export async function ask<S extends z.ZodTypeAny>(
   opts: {
     tier?: "smart" | "fast"; webSearch?: boolean; webFetch?: boolean; codeExecution?: boolean;
     mockAs?: string; extraSkills?: SkillId[]; maxTokens?: number;
+    /** replaces the owner's brand profile — used when an agent works AS one of the owner's clients */
+    context?: string;
+    /** replaces the studio's house rules (e.g. a client's receptionist replying to that client's own customers) */
+    houseRules?: string;
   } = {},
 ): Promise<z.infer<S>> {
   const def = AGENT_BY_ID[agent];
@@ -100,10 +105,10 @@ export async function ask<S extends z.ZodTypeAny>(
   const extra = (opts.extraSkills ?? []).filter((k) => k !== def.skill).map((k) => `\n${SKILLS[k].nameEn.toUpperCase()} RULES\n${SKILLS[k].rules}`).join("\n");
   const system = `${def.role}
 
-${brandContext(brand)}
+${opts.context ?? brandContext(brand)}
 
 HOUSE RULES
-${SKILLS.general.rules}
+${opts.houseRules ?? SKILLS.general.rules}
 ${def.skill !== "general" ? `\n${SKILLS[def.skill].nameEn.toUpperCase()} RULES\n${SKILLS[def.skill].rules}` : ""}${extra}
 ${lessons ? `\nLESSONS THE TEAM LEARNED (follow them, they override defaults)\n${lessons}` : ""}
 

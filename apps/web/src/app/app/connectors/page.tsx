@@ -6,7 +6,7 @@ import { getT } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
-const ENGINEERING = new Set(["problem-hunter", "chief-engineer", "automation-engineer", "ai-engineer", "network-engineer", "software-engineer", "security-reviewer", "outreach-writer", "opportunity-scout", "web-auditor", "web-designer"]);
+const ENGINEERING = new Set(["problem-hunter", "chief-engineer", "automation-engineer", "ai-engineer", "network-engineer", "software-engineer", "security-reviewer", "outreach-writer", "opportunity-scout", "web-auditor", "web-designer", "knowledge-engineer", "receptionist", "qa-engineer", "care-coordinator", "reputation-manager", "growth-marketer", "client-success"]);
 
 export default async function ConnectorsPage() {
   const [{ workspace }, { t, locale }] = await Promise.all([currentWorkspace(), getT()]);

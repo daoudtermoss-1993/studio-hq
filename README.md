@@ -94,6 +94,27 @@ Guardrails: passive checks only (no vulnerability scanning of sites we don't own
 (SSRF guard, redirects re-checked, robots.txt respected); Google Places content other than `place_id` is cleared after 30 days
 unless the owner is in contact with the business (`purgeGoogleData`, daily). Hunting is manual (button) so you control the spend.
 
+## Client delivery: AI employees that work for your clients
+
+When a deal is won, "Turn into a client" gives that business its own AI team (all grounded on ITS knowledge base):
+
+| Agent | Does |
+|---|---|
+| Knowledge engineer | Reads the client's own site (public pages only) + the owner's notes → services, exact prices, hours, location, FAQs, policies, "always hand over" topics, and questions for the owner |
+| AI receptionist | Answers customers on WhatsApp in Lebanese Arabic, Arabizi, French or English; takes booking requests; hands over medical/complaints/unknowns to a human |
+| QA engineer | 30 realistic test messages (incl. medical, complaints, prompt injection) → grades every answer (code checks + judge) → score X/30 |
+| Care coordinator | Reminders before confirmed visits, Meta template texts |
+| Reputation manager | Drafts replies to reviews (owner approves), review requests after visits |
+| Growth marketer | Come-back campaigns for **opted-in** contacts only, with opt-out |
+| Client success | Monthly report from measured numbers (conversations, after-hours, bookings, no-shows, handovers, reply time, quality score) |
+
+Guardrails in code: every price/phone number in a reply must exist in the knowledge base (`groundingCheck`, else a safe
+"let me check" + handover); new assistants run in **draft mode** (staff approve each WhatsApp reply) and automatic replies unlock
+only after the evaluation scores ≥ 90%; handed-over conversations stop auto-replying; WhatsApp webhooks are verified with
+`X-Hub-Signature-256` on the raw body and deduplicated by message id; replies run on a **fast job lane** so customers never wait
+behind long jobs; conversations are deleted after the client's retention period (default 90 days). Every client has a public,
+unlisted, rate-limited **demo link + QR** (`/a/<token>`) so the business owner can try their assistant from their phone in the meeting.
+
 ## Run locally
 
 Requirements: Node 22, pnpm 10, PostgreSQL 16, ffmpeg, Python 3 (+ `pip install faster-whisper` for subtitles).

@@ -29,6 +29,11 @@ Monorepo (pnpm): `apps/web` (Next.js 15), `apps/worker` (job runner), `packages/
   (PageSpeed, TLS, HTML signals → `scoreSite`), the model only explains them. Every outbound fetch goes through `assertPublicUrl`.
   Mockups must pass `checkMockup`, are sanitized, and are only served by `/p/[token]` with the sandbox CSP + concept banner. Never
   invent reviews/testimonials/prices in mockups. Keep only `place_id` from Google beyond 30 days.
+- Client delivery (`clients.ts`, `receptionist.ts`, `care.ts`, `whatsapp.ts`): agents that speak AS a client use
+  `ask(..., { context: clientContext(c), houseRules: CLIENT_HOUSE_RULES })`. The receptionist may reply to the client's OWN customers
+  (inbound only) — but only in draft mode until the evaluation passes ≥ 90% and the owner enables auto replies. Keep `groundingCheck`
+  on every reply. Proactive messages (reminders, reviews, campaigns) = Meta templates + opted-in contacts only. Customer replies use
+  the fast lane (`FAST_JOBS`); never put long work there.
 
 ## Checks before pushing
 - `pnpm -r typecheck`

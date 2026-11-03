@@ -112,7 +112,7 @@ export async function assertPublicUrl(raw: string) {
 }
 
 /** fetch with manual redirects (each hop re-checked), a timeout and a size cap. */
-async function safeFetch(raw: string, timeoutMs = 15_000) {
+export async function safeFetch(raw: string, timeoutMs = 15_000) {
   let url = raw;
   for (let hop = 0; hop < 5; hop++) {
     await assertPublicUrl(url);

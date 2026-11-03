@@ -1,6 +1,9 @@
 import type { Job } from "@studio/db";
 import { analyzeImport, approveReel, dailyRun, processRecording, renderAvatar, weeklyMeeting, writeReel } from "./pipeline";
+import { draftCampaign, draftReviewReplies, monthlyReport, purgeOldMessages, runReminders, writeTemplates } from "./care";
+import { buildKnowledge } from "./clients";
 import { auditOpportunity, designOpportunity, huntOpportunities } from "./opportunities";
+import { evaluateAssistant, replyToMessage } from "./receptionist";
 import { huntProblems, qualifyProblem, solveProblem } from "./solutions";
 import { ceoStrategy } from "./strategy";
 import { analyzeViral, huntViral } from "./viral";
@@ -42,6 +45,24 @@ export async function runJob(job: Job) {
       return auditOpportunity(p.problemId);
     case "design-site":
       return designOpportunity(p.problemId);
+    case "build-knowledge":
+      return buildKnowledge(p.clientId);
+    case "receptionist-reply":
+      return replyToMessage(p.messageId);
+    case "evaluate-assistant":
+      return evaluateAssistant(p.clientId);
+    case "client-templates":
+      return writeTemplates(p.clientId);
+    case "review-replies":
+      return draftReviewReplies(p.clientId);
+    case "client-campaign":
+      return draftCampaign(p.clientId);
+    case "client-report":
+      return monthlyReport(p.clientId, p.period);
+    case "client-reminders":
+      await runReminders();
+      await purgeOldMessages();
+      return;
     default:
       throw new Error(`unknown job type ${job.type}`);
   }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { engineerName } from "@studio/core";
 import { and, db, eq, problems, reels } from "@studio/db";
+import { clientFromDealAction } from "@/app/actions/clients";
 import { dealAction, reelFromProblemAction, rerunProblem } from "@/app/actions/studio";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { CopyButton } from "@/components/CopyButton";
@@ -175,6 +176,7 @@ export default async function ProblemPage({ params }: { params: Promise<{ id: st
         {s && (reel
           ? <Link href={`/app/reels/${reel.number}`} className="btn-ghost">{t.reel} {reel.number} ←</Link>
           : <form action={reelFromProblemAction}>{hidden}<button className="btn-gold">🎬 {t.makeReel}</button></form>)}
+        {p.status === "won" && <form action={clientFromDealAction}>{hidden}<button className="btn-gold">🤝 {t.cl.fromDeal}</button></form>}
         {!busy && <form action={rerunProblem}>{hidden}<button className="btn-ghost">↻ {t.rerun}</button></form>}
       </div>
     </div>

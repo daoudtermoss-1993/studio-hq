@@ -9,14 +9,14 @@ const WEEKLY_AT = process.env.WEEKLY_MEETING_AT || "10:00"; // Sundays, brand ti
 let stopping = false;
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
 
-async function loop(slot: number) {
+async function loop(slot: number | "fast") {
   while (!stopping) {
-    const job = await claimNext().catch((e) => {
+    const job = await claimNext({ lane: slot === "fast" ? "fast" : "normal" }).catch((e) => {
       log("claim error", e);
       return null;
     });
     if (!job) {
-      await new Promise((r) => setTimeout(r, POLL_MS));
+      await new Promise((r) => setTimeout(r, slot === "fast" ? Math.min(POLL_MS, 500) : POLL_MS));
       continue;
     }
     const t = Date.now();
@@ -37,6 +37,8 @@ async function scheduler() {
   while (!stopping) {
     try {
       await recoverStale();
+      // client reminders + retention purge, once an hour
+      await enqueue("client-reminders", null, {}, { dedupeKey: `reminders:${new Date().toISOString().slice(0, 13)}`, once: true });
       const brands = await db.select({ workspaceId: brandProfiles.workspaceId, timezone: brandProfiles.timezone }).from(brandProfiles);
       for (const b of brands) {
         const now = zonedParts(new Date(), b.timezone);
@@ -66,3 +68,4 @@ for (const sig of ["SIGINT", "SIGTERM"] as const) {
 log(`worker up: concurrency ${CONCURRENCY}, daily ${DAILY_AT}, weekly Sun ${WEEKLY_AT}`);
 void scheduler();
 for (let i = 0; i < CONCURRENCY; i++) void loop(i + 1);
+void loop("fast"); // customer replies never wait behind long jobs

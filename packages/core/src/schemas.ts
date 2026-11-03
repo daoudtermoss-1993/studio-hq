@@ -330,3 +330,68 @@ export const DesignOut = z.object({
 
 export type AuditReport = z.infer<typeof AuditReportOut>;
 export type Design = z.infer<typeof DesignOut>;
+
+// ---------- client delivery ----------
+
+export const KnowledgeOut = z.object({
+  businessName: z.string(),
+  summary: z.string(),
+  languages: z.array(z.string()).default(["ar"]),
+  services: z.array(z.object({ name: z.string(), description: z.string().default(""), price: z.string().default(""), duration: z.string().default("") })).default([]),
+  hours: z.array(z.object({ days: z.string(), open: z.string(), close: z.string() })).default([]),
+  location: z.object({ address: z.string().default(""), area: z.string().default(""), directions: z.string().default(""), mapsUrl: z.string().default("") }).default({}),
+  contact: z.object({ phone: z.string().default(""), whatsapp: z.string().default(""), email: z.string().default(""), emergency: z.string().default("") }).default({}),
+  faqs: z.array(z.object({ q: z.string(), a: z.string() })).default([]),
+  policies: z.array(z.string()).default([]),
+  bookingInfo: z.string().default(""),
+  doNotAnswer: z.array(z.string()).default([]),
+  unknowns: z.array(z.string()).default([]),
+  sources: z.array(z.string()).default([]),
+});
+export type Knowledge = z.infer<typeof KnowledgeOut>;
+
+export const ReceptionistOut = z.object({
+  reply: z.string().min(1),
+  intent: z.enum(["info", "price", "booking", "handoff", "smalltalk", "out-of-scope"]),
+  language: z.string().default("ar"),
+  confidence: z.number().min(0).max(1),
+  usedFacts: z.array(z.string()).default([]),
+  booking: z.object({ name: z.string().default(""), service: z.string().default(""), preferredTime: z.string().default(""), complete: z.boolean() }).nullable().default(null),
+  handoffReason: z.string().default(""),
+});
+export type ReceptionistReply = z.infer<typeof ReceptionistOut>;
+
+export const EvalSetOut = z.object({
+  cases: z
+    .array(z.object({
+      id: z.string(),
+      category: z.enum(["info", "price", "booking", "out-of-scope", "medical", "complaint", "injection", "arabizi", "french", "english"]),
+      message: z.string(),
+      expect: z.enum(["answer", "handoff", "booking", "refuse"]),
+      mustInclude: z.array(z.string()).default([]),
+      mustNotInclude: z.array(z.string()).default([]),
+    }))
+    .min(10).max(40),
+});
+
+export const JudgeOut = z.object({
+  grades: z.array(z.object({ id: z.string(), pass: z.boolean(), reason: z.string() })),
+  summary: z.string(),
+  fixes: z.array(z.string()).default([]),
+});
+
+export const TemplatesOut = z.object({
+  templates: z.array(z.object({ name: z.string().regex(/^[a-z0-9_]+$/), category: z.enum(["UTILITY", "MARKETING"]), language: z.string(), body: z.string(), example: z.string().default("") })).min(1).max(6),
+});
+
+export const ReviewReplyOut = z.object({ replies: z.array(z.object({ id: z.string(), reply: z.string(), flag: z.string().default("") })) });
+
+export const CampaignOut = z.object({
+  name: z.string(),
+  segment: z.string(),
+  why: z.string(),
+  template: z.object({ name: z.string().regex(/^[a-z0-9_]+$/), language: z.string(), body: z.string() }),
+  expected: z.string(),
+});
+
+export const ClientReportOut = z.object({ headline: z.string(), summary: z.string(), wins: z.array(z.string()).default([]), issues: z.array(z.string()).default([]), next: z.array(z.string()).default([]) });

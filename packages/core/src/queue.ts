@@ -17,7 +17,18 @@ export type JobType =
   | "solve-problem"
   | "hunt-opportunities"
   | "audit-site"
-  | "design-site";
+  | "design-site"
+  | "build-knowledge"
+  | "receptionist-reply"
+  | "evaluate-assistant"
+  | "client-templates"
+  | "review-replies"
+  | "client-campaign"
+  | "client-report"
+  | "client-reminders";
+
+/** Real-time jobs (a customer is waiting): never wait behind a workspace's long jobs, and get their own worker lane. */
+export const FAST_JOBS: JobType[] = ["receptionist-reply"];
 
 /**
  * Enqueue a background job.
@@ -47,18 +58,21 @@ export async function enqueue(
  * Atomically claims the next due job. Jobs of one workspace run one at a time (no races between
  * e.g. the daily run and an approval), different workspaces run in parallel. Claims are serialized
  * with a transaction-level advisory lock so two workers can't pick two jobs of the same workspace.
+ * FAST_JOBS (customer replies) are exempt from that rule. lane: "fast" = only those, "normal" = everything else, default = any.
  */
-export async function claimNext(): Promise<Job | null> {
+export async function claimNext(opts: { lane?: "fast" | "normal" } = {}): Promise<Job | null> {
+  const fast = sql.join(FAST_JOBS.map((t) => sql`${t}`), sql`, `);
+  const laneCond = opts.lane === "fast" ? sql`AND j.type IN (${fast})` : opts.lane === "normal" ? sql`AND j.type NOT IN (${fast})` : sql``;
   const id = await db.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(814207)`);
     const res = await tx.execute<{ id: string }>(sql`
       UPDATE jobs SET status = 'running', locked_at = now(), attempts = attempts + 1, updated_at = now()
       WHERE id = (
         SELECT j.id FROM jobs j
-        WHERE j.status = 'queued' AND j.run_at <= now()
-          AND (j.workspace_id IS NULL OR NOT EXISTS (
-            SELECT 1 FROM jobs r WHERE r.status = 'running' AND r.workspace_id = j.workspace_id))
-        ORDER BY j.run_at ASC LIMIT 1 FOR UPDATE SKIP LOCKED
+        WHERE j.status = 'queued' AND j.run_at <= now() ${laneCond}
+          AND (j.workspace_id IS NULL OR j.type IN (${fast}) OR NOT EXISTS (
+            SELECT 1 FROM jobs r WHERE r.status = 'running' AND r.workspace_id = j.workspace_id AND r.type NOT IN (${fast})))
+        ORDER BY (j.type IN (${fast})) DESC, j.run_at ASC LIMIT 1 FOR UPDATE SKIP LOCKED
       )
       RETURNING id`);
     return res.rows[0]?.id;

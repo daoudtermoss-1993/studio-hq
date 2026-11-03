@@ -347,6 +347,145 @@ export const jobs = pgTable(
   (t) => [index("jobs_status_run_idx").on(t.status, t.runAt), index("jobs_dedupe_idx").on(t.type, t.dedupeKey)],
 );
 
+// ---------- client delivery (AI employees that work FOR the owner's clients) ----------
+
+export const clientStatus = pgEnum("client_status", ["onboarding", "active", "paused"]);
+
+/** A business that bought a service. Its AI employees (receptionist, reminders, reviews…) run on its own knowledge base. */
+export const clients = pgTable(
+  "clients",
+  {
+    id: id(),
+    workspaceId: ws(),
+    name: text("name").notNull(),
+    vertical: text("vertical").notNull().default(""),
+    city: text("city").notNull().default(""),
+    website: text("website").notNull().default(""),
+    phone: text("phone").notNull().default(""),
+    timezone: text("timezone").notNull().default("Asia/Beirut"),
+    status: clientStatus("status").notNull().default("onboarding"),
+    problemId: text("problem_id"),
+    /** owner's notes / facts for the knowledge engineer (prices, doctors, policies…) */
+    notes: text("notes").notNull().default(""),
+    knowledge: jsonb("knowledge").$type<any>(),
+    knowledgeAt: timestamp("knowledge_at", { withTimezone: true }),
+    /** tone, escalation contact, booking mode, review link, reminder template, retention, caps, autoReply */
+    settings: jsonb("settings").$type<Record<string, any>>().notNull().default({}),
+    demoToken: text("demo_token").notNull(),
+    waPhoneNumberId: text("wa_phone_number_id").notNull().default(""),
+    waTokenEnc: text("wa_token_enc"),
+    waAppSecretEnc: text("wa_app_secret_enc"),
+    waVerifyToken: text("wa_verify_token").notNull().default(""),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("clients_demo_uq").on(t.demoToken), index("clients_ws_idx").on(t.workspaceId), index("clients_wa_phone_idx").on(t.waPhoneNumberId)],
+);
+
+export const conversations = pgTable(
+  "conversations",
+  {
+    id: id(),
+    workspaceId: ws(),
+    clientId: text("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+    channel: text("channel").notNull(), // test | demo | whatsapp
+    contact: text("contact").notNull(), // wa_id or a random demo session id
+    contactName: text("contact_name").notNull().default(""),
+    handoff: boolean("handoff").notNull().default(false),
+    handoffReason: text("handoff_reason").notNull().default(""),
+    lastMessageAt: timestamp("last_message_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("conversations_uq").on(t.clientId, t.channel, t.contact), index("conversations_last_idx").on(t.clientId, t.lastMessageAt)],
+);
+
+export const messageStatus = pgEnum("message_status", ["received", "pending", "draft", "sent", "failed", "skipped"]);
+
+export const messages = pgTable(
+  "messages",
+  {
+    id: id(),
+    workspaceId: ws(),
+    clientId: text("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+    conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+    role: text("role").notNull(), // user | assistant | staff
+    text: text("text").notNull(),
+    status: messageStatus("status").notNull().default("received"),
+    intent: text("intent").notNull().default(""),
+    confidence: real("confidence"),
+    meta: jsonb("meta").$type<Record<string, any>>().notNull().default({}),
+    externalId: text("external_id"),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("messages_external_uq").on(t.clientId, t.externalId), index("messages_conv_idx").on(t.conversationId, t.createdAt)],
+);
+
+export const bookingStatus = pgEnum("booking_status", ["requested", "confirmed", "declined", "done", "no_show", "cancelled"]);
+
+export const bookings = pgTable(
+  "bookings",
+  {
+    id: id(),
+    workspaceId: ws(),
+    clientId: text("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+    conversationId: text("conversation_id"),
+    name: text("name").notNull().default(""),
+    phone: text("phone").notNull().default(""),
+    service: text("service").notNull().default(""),
+    preferredTime: text("preferred_time").notNull().default(""),
+    startsAt: timestamp("starts_at", { withTimezone: true }),
+    status: bookingStatus("status").notNull().default("requested"),
+    remindedAt: timestamp("reminded_at", { withTimezone: true }),
+    reviewRequestedAt: timestamp("review_requested_at", { withTimezone: true }),
+    notes: text("notes").notNull().default(""),
+    createdAt: createdAt(),
+  },
+  (t) => [index("bookings_client_idx").on(t.clientId, t.status)],
+);
+
+/** People who agreed to hear from the client (needed before any proactive message). */
+export const clientContacts = pgTable(
+  "client_contacts",
+  {
+    id: id(),
+    workspaceId: ws(),
+    clientId: text("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+    name: text("name").notNull().default(""),
+    phone: text("phone").notNull(),
+    optIn: boolean("opt_in").notNull().default(false),
+    lastVisit: timestamp("last_visit", { withTimezone: true }),
+    tags: text("tags").array().notNull().default([]),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("client_contacts_uq").on(t.clientId, t.phone)],
+);
+
+export const clientReviews = pgTable("client_reviews", {
+  id: id(),
+  workspaceId: ws(),
+  clientId: text("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  author: text("author").notNull().default(""),
+  rating: integer("rating"),
+  text: text("text").notNull(),
+  reply: text("reply").notNull().default(""),
+  status: text("status").notNull().default("new"), // new | drafted | approved
+  createdAt: createdAt(),
+});
+
+/** Agent outputs tied to a client: evaluations (X/30), campaigns, monthly reports. */
+export const clientArtifacts = pgTable(
+  "client_artifacts",
+  {
+    id: id(),
+    workspaceId: ws(),
+    clientId: text("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(), // evaluation | campaign | report | templates
+    period: text("period").notNull().default(""),
+    data: jsonb("data").$type<any>().notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("client_artifacts_idx").on(t.clientId, t.kind, t.createdAt)],
+);
+
 export type User = typeof users.$inferSelect;
 export type Workspace = typeof workspaces.$inferSelect;
 export type BrandProfile = typeof brandProfiles.$inferSelect;
@@ -358,3 +497,10 @@ export type Lesson = typeof lessons.$inferSelect;
 export type ViralFind = typeof viralFinds.$inferSelect;
 export type Problem = typeof problems.$inferSelect;
 export type Connector = typeof connectors.$inferSelect;
+export type Client = typeof clients.$inferSelect;
+export type Conversation = typeof conversations.$inferSelect;
+export type Message = typeof messages.$inferSelect;
+export type Booking = typeof bookings.$inferSelect;
+export type ClientContact = typeof clientContacts.$inferSelect;
+export type ClientReview = typeof clientReviews.$inferSelect;
+export type ClientArtifact = typeof clientArtifacts.$inferSelect;

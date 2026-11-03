@@ -1,6 +1,7 @@
 // End-to-end smoke test: run against a live app + worker started with AI_PROVIDER=mock.
 //   BASE_URL=http://localhost:3000 SAMPLE_VIDEO=/path/raw.mp4 SHOTS=./shots node e2e/smoke.mjs
 import { mkdirSync } from "node:fs";
+import { createHmac } from "node:crypto";
 import { createRequire } from "node:module";
 
 const { chromium } = createRequire(import.meta.url)("playwright");
@@ -16,6 +17,7 @@ const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 const step = (s) => console.log("•", s);
 let previewOverflow = null;
+let demoOverflow = null;
 const shot = (name) => page.screenshot({ path: `${SHOTS}/${name}.png`, fullPage: true });
 
 async function waitFor(fn, label, timeout = 120_000) {
@@ -152,6 +154,58 @@ try {
   await Promise.all([page.waitForURL("**/app/solutions/*"), page.click("button:has-text('افحص موقع')")]);
   await waitFor(async () => (await page.locator(".chip:text-is('مرفوضة')").count()) > 0, "good site skipped");
 
+  step("client delivery: win the clinic → client → knowledge base → 30-question test");
+  await page.goto(`${BASE}/app/solutions`);
+  await Promise.all([page.waitForURL("**/app/solutions/*"), page.locator("a:has-text('عيادة د. سمير للأسنان')").first().click()]);
+  await page.fill("#value", "700");
+  await page.click("button:has-text('صار زبون')");
+  await waitFor(async () => (await page.locator("button:has-text('حوّلو لزبون')").count()) > 0, "won");
+  await Promise.all([page.waitForURL("**/app/clients/*"), page.click("button:has-text('حوّلو لزبون')")]);
+  const clientUrl = page.url();
+  const clientId = clientUrl.split("/app/clients/")[1].split("?")[0];
+  await waitFor(async () => (await page.locator("text=/\\d+\\/30/").count()) > 0, "evaluation done", 180_000);
+  await page.locator("button:has-text('قديش سعر التبييض؟')").first().click();
+  await page.waitForSelector("div[class*='bg-[#202c33]'][dir='auto']:has-text('بتحب احجزلك موعد')", { timeout: 60_000 });
+  await page.waitForTimeout(300);
+  await shot("08k-client-assistant");
+
+  step("public demo on a phone");
+  const demoHref = await page.locator("a[href^='/a/']").first().getAttribute("href");
+  const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+  phone.on("pageerror", (e) => errors.push(`demo: ${e.message}`));
+  await phone.goto(`${BASE}${demoHref}`);
+  await phone.locator("button:has-text('شو دوامكن؟')").click();
+  await phone.waitForSelector("text=09:00", { timeout: 60_000 });
+  await phone.fill("input[placeholder='اكتب رسالة…']", "Vous êtes où ?");
+  await phone.click("button:has-text('ابعت')");
+  await phone.waitForSelector("text=Nous sommes", { timeout: 60_000 });
+  await phone.waitForTimeout(400);
+  await phone.screenshot({ path: `${SHOTS}/08l-demo-phone.png` });
+  demoOverflow = await phone.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
+  await phone.close();
+
+  step("WhatsApp: connect, signed webhook → draft reply + booking request");
+  await page.goto(`${clientUrl.split("?")[0]}?tab=settings`);
+  await page.fill("#pnid", "1234567890");
+  await page.fill("#was", "e2e-app-secret");
+  await page.locator("form:has(#pnid) button:has-text('احفظ')").click();
+  await page.waitForTimeout(800);
+  const wa = JSON.stringify({ entry: [{ changes: [{ value: { metadata: { phone_number_id: "1234567890" }, contacts: [{ wa_id: "96170111222", profile: { name: "Rim" } }],
+    messages: [{ from: "96170111222", id: `wamid.${Date.now()}`, timestamp: String(Math.floor(Date.now() / 1000)), type: "text", text: { body: "اسمي ريم بدي احجز موعد تنظيف بكرا الساعة 5" } }] } }] }] });
+  const bad = await page.request.post(`${BASE}/api/wa/${clientId}`, { data: wa, headers: { "content-type": "application/json", "x-hub-signature-256": "sha256=00" } });
+  if (bad.status() !== 401) throw new Error(`unsigned webhook accepted: ${bad.status()}`);
+  const ok = await page.request.post(`${BASE}/api/wa/${clientId}`, { data: wa, headers: { "content-type": "application/json", "x-hub-signature-256": `sha256=${createHmac("sha256", "e2e-app-secret").update(wa).digest("hex")}` } });
+  if (ok.status() !== 200) throw new Error(`signed webhook rejected: ${ok.status()}`);
+  await page.goto(`${clientUrl.split("?")[0]}?tab=inbox`);
+  await waitFor(async () => (await page.locator("button:has-text('وافق وابعت')").count()) > 0, "WhatsApp draft reply");
+  await shot("08m-client-inbox");
+  await page.goto(`${clientUrl.split("?")[0]}?tab=bookings`);
+  await shot("08n-client-bookings");
+  await page.goto(`${clientUrl.split("?")[0]}?tab=report`);
+  await page.click("button:has-text('اعمل تقرير هالشهر')");
+  await waitFor(async () => (await page.locator("text=رسائل زباين").count()) > 0, "monthly report");
+  await shot("08o-client-report");
+
   step("weekly meeting");
   await page.goto(`${BASE}/app/meeting`);
   await page.click("text=اعقد الاجتماع الآن");
@@ -184,7 +238,7 @@ try {
   }
   await mobile.screenshot({ path: `${SHOTS}/13-mobile-connectors.png`, fullPage: true });
 
-  console.log(JSON.stringify({ ok: true, pageErrors: errors, mobileOverflow: overflow, conceptMobileOverflow: previewOverflow }));
+  console.log(JSON.stringify({ ok: true, pageErrors: errors, mobileOverflow: overflow, conceptMobileOverflow: previewOverflow, demoMobileOverflow: demoOverflow }));
 } catch (e) {
   await shot("error");
   console.log(JSON.stringify({ ok: false, error: String(e), pageErrors: errors }));
