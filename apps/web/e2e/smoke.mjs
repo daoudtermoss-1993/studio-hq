@@ -95,6 +95,32 @@ try {
   await page.locator("button:has-text('لا أوافق')").last().click();
   await waitFor(async () => (await page.locator("text=مرفوض").count()) > 0, "rejected");
 
+  step("engineering division: hunt → qualify → solve");
+  await page.goto(`${BASE}/app/solutions`);
+  await page.click("text=دوّر على مشاكل هلّق");
+  await waitFor(async () => (await page.locator("a .chip:text-is('الحل جاهز')").count()) > 0, "a solved problem", 180_000);
+  await shot("08d-solutions");
+  await page.locator("a:has(.chip:text-is('الحل جاهز'))").first().click();
+  await page.waitForURL("**/app/solutions/*");
+  await shot("08e-problem");
+  await page.click("button:has-text('بعتّ الرسالة')");
+  await page.waitForTimeout(800);
+  await page.fill("#value", "400");
+  await page.fill("#note", "قبل بالعرض");
+  await page.click("button:has-text('صار زبون')");
+  await waitFor(async () => (await page.locator(".chip:text-is('زبون ✓')").count()) > 0, "deal won");
+  await Promise.all([page.waitForURL("**/app/reels/*"), page.click("button:has-text('اعمل منها ريل')")]);
+
+  step("connectors");
+  await page.goto(`${BASE}/app/connectors`);
+  await page.fill("#cname", "docs-search");
+  await page.fill("#curl", "https://mcp.example.com/mcp");
+  await page.fill("#ctoken", "secret-token");
+  await page.click("button:has-text('ضيف connector')");
+  await waitFor(async () => (await page.locator("text=docs-search").count()) > 0, "connector listed");
+  if ((await page.content()).includes("secret-token")) throw new Error("token leaked to the page");
+  await shot("08f-connectors");
+
   step("weekly meeting");
   await page.goto(`${BASE}/app/meeting`);
   await page.click("text=اعقد الاجتماع الآن");
@@ -119,7 +145,13 @@ try {
   await mobile.goto(`${BASE}/app`);
   await mobile.waitForTimeout(800);
   await mobile.screenshot({ path: `${SHOTS}/12-mobile.png` });
-  const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
+  let overflow = await mobile.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
+  for (const path of ["/app/solutions", "/app/connectors"]) {
+    await mobile.goto(`${BASE}${path}`);
+    await mobile.waitForTimeout(500);
+    overflow ||= await mobile.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
+  }
+  await mobile.screenshot({ path: `${SHOTS}/13-mobile-connectors.png`, fullPage: true });
 
   console.log(JSON.stringify({ ok: true, pageErrors: errors, mobileOverflow: overflow }));
 } catch (e) {

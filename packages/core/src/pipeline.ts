@@ -17,6 +17,7 @@ import {
 import { storage } from "./storage";
 import { ask, log, runAgent } from "./team";
 import { addDays, localDate, zonedToUtc } from "./time";
+import { huntProblems, problemBlock, solutionsSummary } from "./solutions";
 import { ceoStrategy } from "./strategy";
 import { editReel, extractFrame, whisperLang } from "./video";
 import { huntViral, viralCandidates } from "./viral";
@@ -140,7 +141,8 @@ Our remake: ${JSON.stringify(ref.analysis.remake)}`
   const presenterLine = reel.presenter === "avatar"
     ? "\nPRESENTER: the owner's AI digital twin (same face & voice). Write lines that sound natural when spoken by the twin; no actions that need real-world footage."
     : "";
-  const brief = `REEL #${reel.number}: ${reel.title}\nPillar: ${reel.pillar}\nAngle: ${reel.angle}\nSource: ${reel.source}\nTarget length: ${reel.targetSeconds}s${presenterLine}${viralBlock}${answered(reel)}`;
+  const caseBlock = await problemBlock(reel.source);
+  const brief = `REEL #${reel.number}: ${reel.title}\nPillar: ${reel.pillar}\nAngle: ${reel.angle}\nSource: ${reel.source.startsWith("problem:") ? "our solved case" : reel.source}\nTarget length: ${reel.targetSeconds}s${presenterLine}${viralBlock}${caseBlock}${answered(reel)}`;
 
   const hooks = await runAgent(ws, "hook-writer", `هوكات ريل ${reel.number}`, reel.id, (h) =>
     ask(h, ws, brand, "hook-writer", `${brief}\nWrite 5 hooks in different patterns and choose the best.`, HooksOut),
@@ -443,6 +445,7 @@ export async function dailyRun(workspaceId: string) {
     const strategy = await latestStrategy(workspaceId);
     if (!strategy || Date.now() - +strategy.createdAt > 7 * 86_400_000) await ceoStrategy(workspaceId);
     await huntViral(workspaceId);
+    await huntProblems(workspaceId);
     for (const r of await reelsWhere(workspaceId, "recorded")) if (r.rawAssetId) await processRecording(r.id);
     for (const r of await reelsWhere(workspaceId, "approved")) await schedule(r, brand);
     for (const r of await reelsWhere(workspaceId, "idea")) await writeReel(r.id);
@@ -476,6 +479,7 @@ export async function weeklyMeeting(workspaceId: string) {
     decision: r.decision, presenter: r.presenter, rejected: r.status === "rejected",
     changeRequests: r.notes, factIssues: (r.factCheck?.claims ?? []).filter((c: any) => !c.ok), editCheck: r.editReport?.check ?? null,
   }));
+  const deals = await solutionsSummary(workspaceId);
   const out = await runAgent(workspaceId, "ceo", "الاجتماع الأسبوعي", null, (h) =>
     ask(h, workspaceId, brand, "ceo",
       `Weekly meeting. Learn from this week's evidence and propose at most 10 one-line rules, each with evidence
@@ -483,7 +487,8 @@ export async function weeklyMeeting(workspaceId: string) {
 strongest signal: find what the owner didn't want. Don't repeat existing lessons.
 THIS WEEK'S REELS: ${JSON.stringify(evidence)}
 ANALYST REPORTS: ${JSON.stringify(reports.map((r) => r.result))}
-EXISTING LESSONS: ${JSON.stringify(known)}`, MeetingOut, { mockAs: "ceo-meeting" }),
+SOLUTIONS PIPELINE (deals by stage): ${JSON.stringify(deals)}
+EXISTING LESSONS: ${JSON.stringify(known)}`, MeetingOut, { mockAs: "ceo-meeting", extraSkills: ["engineering", "outreach"] }),
   );
   if (out.lessons.length) {
     await db.insert(lessons).values(out.lessons.map((l) => ({ workspaceId, skill: l.skill, text: l.text, evidence: l.evidence })));

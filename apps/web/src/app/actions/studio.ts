@@ -3,8 +3,11 @@
 import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { addViralLink, adoptViral, answerQuestion, dismissViral, enqueue, markPosted, rejectReel } from "@studio/core";
-import { and, brandProfiles, dataImports, db, eq, lessons, memberships, reels, viralFinds, workspaces } from "@studio/db";
+import {
+  addConnector, addProblem, addViralLink, adoptViral, answerQuestion, dismissViral, enqueue, markPosted, reelFromProblem, rejectReel,
+  removeConnector, secretReady, setConnectorEnabled, setDealStatus,
+} from "@studio/core";
+import { and, brandProfiles, dataImports, db, eq, lessons, memberships, problems, reels, viralFinds, workspaces } from "@studio/db";
 import { currentWorkspace, requireUser } from "@/lib/auth";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -43,6 +46,8 @@ function brandFields(f: FormData) {
     presenterMode: ["self", "avatar", "auto"].includes(str(f, "presenterMode")) ? str(f, "presenterMode") : "self",
     avatarId: str(f, "avatarId"),
     voiceId: str(f, "voiceId"),
+    solutionTracks: f.getAll("solutionTracks").map(String).filter((x) => x === "smb" || x === "technical"),
+    techFocus: str(f, "techFocus") || "network automation (Cisco NSO, YANG, NETCONF/RESTCONF), AI & workflow automation",
   };
 }
 
@@ -200,4 +205,67 @@ export async function runStrategy() {
   const { workspace } = await currentWorkspace();
   await enqueue("strategy", workspace.id, {}, { dedupeKey: "manual-strategy" });
   revalidatePath("/app/strategy");
+}
+
+export async function huntProblemsNow() {
+  const { workspace } = await currentWorkspace();
+  await enqueue("hunt-problems", workspace.id, {}, { dedupeKey: "manual-hunt-problems" });
+  revalidatePath("/app/solutions");
+}
+
+export async function addProblemAction(form: FormData) {
+  const { workspace } = await currentWorkspace();
+  const url = str(form, "url");
+  const body = str(form, "body");
+  if (!/^https?:\/\/\S+$/.test(url) || !body) return;
+  await addProblem(workspace.id, { url, title: str(form, "title") || body.slice(0, 80), body, track: str(form, "track") === "technical" ? "technical" : "smb" });
+  revalidatePath("/app/solutions");
+}
+
+export async function dealAction(form: FormData) {
+  const { workspace } = await currentWorkspace();
+  const status = str(form, "status");
+  if (!["contacted", "replied", "won", "lost"].includes(status)) return;
+  const value = str(form, "value") ? Number(str(form, "value")) : undefined;
+  await setDealStatus(workspace.id, str(form, "problemId"), status as "contacted" | "replied" | "won" | "lost", Number.isFinite(value) ? value : undefined, str(form, "note"));
+  revalidatePath(`/app/solutions/${str(form, "problemId")}`);
+  revalidatePath("/app/solutions");
+}
+
+export async function reelFromProblemAction(form: FormData) {
+  const { workspace } = await currentWorkspace();
+  const id = str(form, "problemId");
+  const [own] = await db.select({ id: problems.id }).from(problems).where(and(eq(problems.id, id), eq(problems.workspaceId, workspace.id)));
+  if (!own) return;
+  const reel = await reelFromProblem(id);
+  if (reel) redirect(`/app/reels/${reel.number}`);
+}
+
+export async function addConnectorAction(form: FormData) {
+  const { workspace } = await currentWorkspace();
+  const agents = form.getAll("agents").map(String);
+  const token = str(form, "token");
+  if (token && !secretReady()) return;
+  await addConnector(workspace.id, { name: str(form, "name"), url: str(form, "url"), token: str(form, "token") || undefined, agents });
+  revalidatePath("/app/connectors");
+}
+
+export async function connectorAction(form: FormData) {
+  const { workspace } = await currentWorkspace();
+  const id = str(form, "connectorId");
+  const op = str(form, "op");
+  if (op === "remove") await removeConnector(workspace.id, id);
+  else await setConnectorEnabled(workspace.id, id, op === "enable");
+  revalidatePath("/app/connectors");
+}
+
+export async function rerunProblem(form: FormData) {
+  const { workspace } = await currentWorkspace();
+  const id = str(form, "problemId");
+  const [p] = await db.select().from(problems).where(and(eq(problems.id, id), eq(problems.workspaceId, workspace.id)));
+  if (!p) return;
+  const type = p.status === "new" || p.status === "rejected" ? "qualify-problem" : "solve-problem";
+  if (type === "solve-problem") await db.update(problems).set({ status: "solving" }).where(eq(problems.id, id));
+  await enqueue(type, workspace.id, { problemId: id }, { dedupeKey: `${type === "qualify-problem" ? "qualify" : "solve"}:${id}` });
+  revalidatePath(`/app/solutions/${id}`);
 }

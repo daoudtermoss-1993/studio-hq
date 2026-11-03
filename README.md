@@ -48,6 +48,30 @@ versions. It never downloads or reuses anyone's footage, audio or wording — pl
 - Jobs of one workspace run one at a time; different workspaces run in parallel (`FOR UPDATE SKIP LOCKED`).
 - `AI_PROVIDER=mock` runs the whole product without an API key (demos, tests).
 
+## Engineering division (solutions)
+
+Eight more agents turn real public problems into paid work, on two tracks: **SMB** (small businesses drowning in manual work)
+and **technical** (engineers stuck on automation, AI, networking, software).
+
+| Agent | Does | Tools |
+|---|---|---|
+| Problem hunter | Finds fresh public problems daily | web search, Stack Exchange, Hacker News, GitHub Issues, Reddit |
+| Chief engineer | Qualifies: can we solve it, fit, value, effort, price, who owns it | web search + fetch |
+| Automation / AI / Network / Software engineers | Design the solution, then build and **run** a small demo | web search + fetch, code sandbox, assigned MCP connectors |
+| Security reviewer | Reviews the solution and demo before anything leaves | code sandbox |
+| Outreach writer | One personal message + follow-up + a helpful public reply | — |
+
+Flow: `hunt-problems` → `qualify-problem` → `solve-problem` (solution → tested demo → security review → outreach) →
+the owner sends the message and moves the deal (contacted → replied → won/lost) → "make a reel" turns it into an
+anonymized problem → solution video. Nothing is ever sent by an agent.
+
+**Connectors** (`/app/connectors`): add any remote MCP server (https), choose which agents can use it; tokens are
+AES-256-GCM encrypted with `APP_SECRET` and only decrypted in the worker when calling the Claude API (MCP connector beta).
+Prefer read-only connectors. Built-in sources show whether their key is set.
+
+**Skills**: every engineer has an expert playbook in `packages/core/src/skills.ts` (engineering, automation, ai-engineering,
+network, software, security, outreach) plus the lessons the owner approves in the weekly meeting.
+
 ## Run locally
 
 Requirements: Node 22, pnpm 10, PostgreSQL 16, ffmpeg, Python 3 (+ `pip install faster-whisper` for subtitles).

@@ -15,6 +15,13 @@
       "when": 1793720998257,
       "tag": "0001_viral_twin_strategy",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793738879356,
+      "tag": "0002_solutions_division",
+      "breakpoints": true
     }
   ]
 }

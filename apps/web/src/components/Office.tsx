@@ -129,7 +129,8 @@ export function Office({ initial, locale, labels, poll = true }: { initial: Offi
   const by = Object.fromEntries(s.agents.map((a) => [a.id, a]));
   const order = ["ceo", "strategy", "trend-scout", "viral-hunter", "viral-analyst", "content-strategist", "hook-writer", "scriptwriter",
     "fact-checker", "booth", "digital-twin", "video-editor", "caption-writer", "cover-designer", "scheduler", "repurposer",
-    "analyst", "community-manager", "library", "meeting"];
+    "analyst", "community-manager", "problem-hunter", "chief-engineer", "automation-engineer", "ai-engineer",
+    "network-engineer", "software-engineer", "security-reviewer", "outreach-writer", "library", "meeting"];
   const onAir = s.booth.toRecord > 0;
   const dateFmt = (iso: string) => new Date(iso).toLocaleDateString(locale === "ar" ? "ar-LB" : "en-GB", { weekday: "long", day: "numeric", month: "short" });
 

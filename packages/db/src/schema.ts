@@ -74,6 +74,9 @@ export const brandProfiles = pgTable("brand_profiles", {
   avatarProvider: text("avatar_provider").notNull().default("heygen"),
   avatarId: text("avatar_id").notNull().default(""),
   voiceId: text("voice_id").notNull().default(""),
+  /** solutions division: which markets the engineers hunt problems in */
+  solutionTracks: text("solution_tracks").array().notNull().default(["smb", "technical"]),
+  techFocus: text("tech_focus").notNull().default("network automation (Cisco NSO, YANG, NETCONF/RESTCONF), AI & workflow automation"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
@@ -192,6 +195,54 @@ export const strategyReports = pgTable("strategy_reports", {
   createdAt: createdAt(),
 });
 
+// ---------- solutions division (problems → solutions → deals) ----------
+
+export const problemStatus = pgEnum("problem_status", [
+  "new", "qualified", "rejected", "solving", "solved", "contacted", "replied", "won", "lost",
+]);
+
+export const problems = pgTable(
+  "problems",
+  {
+    id: id(),
+    workspaceId: ws(),
+    track: text("track").notNull().default("smb"), // smb | technical
+    source: text("source").notNull().default("web"), // reddit | stackexchange | hn | github | web | manual | comments
+    url: text("url").notNull(),
+    title: text("title").notNull().default(""),
+    body: text("body").notNull().default(""),
+    author: text("author").notNull().default(""),
+    organization: text("organization").notNull().default(""),
+    contact: text("contact").notNull().default(""),
+    postedAt: timestamp("posted_at", { withTimezone: true }),
+    votes: integer("votes"),
+    status: problemStatus("status").notNull().default("new"),
+    qualification: jsonb("qualification").$type<any>(),
+    solution: jsonb("solution").$type<any>(),
+    demo: jsonb("demo").$type<any>(),
+    review: jsonb("review").$type<any>(),
+    outreach: jsonb("outreach").$type<any>(),
+    dealValue: integer("deal_value"),
+    notes: text("notes").notNull().default(""),
+    reelId: text("reel_id"),
+    createdAt: createdAt(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+  },
+  (t) => [uniqueIndex("problems_ws_url_uq").on(t.workspaceId, t.url), index("problems_ws_status_idx").on(t.workspaceId, t.status)],
+);
+
+/** Remote MCP servers the engineers may use (token encrypted at rest). */
+export const connectors = pgTable("connectors", {
+  id: id(),
+  workspaceId: ws(),
+  name: text("name").notNull(),
+  url: text("url").notNull(),
+  tokenEnc: text("token_enc"),
+  agents: text("agents").array().notNull().default([]),
+  enabled: boolean("enabled").notNull().default(true),
+  createdAt: createdAt(),
+});
+
 // ---------- the team ----------
 
 export const runStatus = pgEnum("run_status", ["running", "done", "failed"]);
@@ -279,3 +330,5 @@ export type Asset = typeof assets.$inferSelect;
 export type Job = typeof jobs.$inferSelect;
 export type Lesson = typeof lessons.$inferSelect;
 export type ViralFind = typeof viralFinds.$inferSelect;
+export type Problem = typeof problems.$inferSelect;
+export type Connector = typeof connectors.$inferSelect;

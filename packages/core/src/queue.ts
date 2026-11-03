@@ -11,7 +11,10 @@ export type JobType =
   | "render-avatar"
   | "hunt-viral"
   | "analyze-viral"
-  | "strategy";
+  | "strategy"
+  | "hunt-problems"
+  | "qualify-problem"
+  | "solve-problem";
 
 /**
  * Enqueue a background job.

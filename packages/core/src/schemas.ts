@@ -183,7 +183,10 @@ export const CommunityOut = z.object({
 
 export const MeetingOut = z.object({
   lessons: z
-    .array(z.object({ skill: z.enum(["general", "writing", "strategy", "trends", "editing", "analytics", "viral", "monetization"]), text: z.string(), evidence: z.string() }))
+    .array(z.object({
+      skill: z.enum(["general", "writing", "strategy", "trends", "editing", "analytics", "viral", "monetization", "engineering", "automation", "ai-engineering", "network", "software", "security", "outreach"]),
+      text: z.string(), evidence: z.string(),
+    }))
     .max(10),
   summary: z.string(),
   nextWeekFocus: z.string(),
@@ -205,3 +208,78 @@ export type Meeting = z.infer<typeof MeetingOut>;
 export type ViralHunt = z.infer<typeof ViralHuntOut>;
 export type ViralAnalysis = z.infer<typeof ViralAnalysisOut>;
 export type StrategyPlan = z.infer<typeof StrategyPlanOut>;
+
+export const SPECIALISTS = ["automation-engineer", "ai-engineer", "network-engineer", "software-engineer"] as const;
+
+export const ProblemHuntOut = z.object({
+  queries: z
+    .array(z.object({ source: z.enum(["reddit", "stackexchange", "hn", "github"]), q: z.string(), where: z.string().default(""), track: z.enum(["smb", "technical"]).optional() }))
+    .max(10),
+  finds: z
+    .array(
+      z.object({
+        track: z.enum(["smb", "technical"]),
+        url: z.string(),
+        title: z.string(),
+        body: z.string().default(""),
+        author: z.string().default(""),
+        organization: z.string().default(""),
+        contact: z.string().default(""),
+        postedAt: z.string().nullable().default(null),
+      }),
+    )
+    .max(12),
+});
+
+export const QualifyOut = z.object({
+  canSolve: z.boolean(),
+  fitScore: z.number().min(0).max(10),
+  valueEstimate: z.string(),
+  reachable: z.boolean(),
+  assignee: z.enum(SPECIALISTS),
+  effortDays: z.object({ best: z.number(), likely: z.number(), worst: z.number() }),
+  price: z.object({ setup: z.string(), monthly: z.string().default(""), currency: z.string().default("USD") }),
+  why: z.string(),
+  rejectReason: z.string().default(""),
+  questions: z.array(z.string()).default([]),
+});
+
+export const SolutionOut = z.object({
+  summary: z.string(),
+  rootCause: z.string(),
+  approach: z.string(),
+  architecture: z.array(z.string()).min(1),
+  steps: z.array(z.string()).min(2),
+  stack: z.array(z.string()).default([]),
+  runningCost: z.string().default(""),
+  risks: z.array(z.string()).default([]),
+  demoPlan: z.string(),
+  sources: z.array(z.string()).default([]),
+});
+
+export const DemoOut = z.object({
+  files: z.array(z.object({ path: z.string(), content: z.string() })).min(1).max(8),
+  howToRun: z.string(),
+  testCommand: z.string(),
+  testOutput: z.string(),
+  works: z.boolean(),
+  limitations: z.array(z.string()).default([]),
+});
+
+export const ReviewOut = z.object({
+  verdict: z.enum(["approve", "fix-first", "reject"]),
+  issues: z.array(z.object({ severity: z.enum(["critical", "high", "medium", "low"]), issue: z.string(), fix: z.string() })).default([]),
+  summary: z.string(),
+});
+
+export const OutreachOut = z.object({
+  channel: z.string(),
+  message: z.string(),
+  followUp: z.string(),
+  publicReply: z.string().default(""),
+  personalization: z.string().default(""),
+});
+
+export type Qualify = z.infer<typeof QualifyOut>;
+export type Solution = z.infer<typeof SolutionOut>;
+export type Demo = z.infer<typeof DemoOut>;

@@ -48,6 +48,18 @@ export function BrandForm({ t, brand, studioName, submit, action }: {
       {field("recordingSetup", <input className="input" id="recordingSetup" name="recordingSetup" defaultValue={brand?.recordingSetup} />, true)}
       {field("country", <input className="input" id="country" name="country" dir="ltr" maxLength={2} defaultValue={brand?.country ?? "LB"} />)}
       {field("goals", <input className="input" id="goals" name="goals" defaultValue={brand?.goals} />)}
+      <fieldset className="sm:col-span-2">
+        <legend className="label">{f.solutionTracks}</legend>
+        <div className="flex flex-wrap gap-3">
+          {(["smb", "technical"] as const).map((k) => (
+            <label key={k} className="flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm">
+              <input type="checkbox" name="solutionTracks" value={k} defaultChecked={brand ? brand.solutionTracks.includes(k) : true} />
+              {t.track[k]}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      {field("techFocus", <input className="input" id="techFocus" name="techFocus" dir="auto" defaultValue={brand?.techFocus} />, true)}
       <fieldset className="space-y-3 rounded-xl border border-line p-4 sm:col-span-2">
         <legend className="label px-1">{f.presenterMode}</legend>
         <div className="flex flex-wrap gap-3">

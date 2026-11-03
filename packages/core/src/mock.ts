@@ -84,6 +84,58 @@ export function mockAgent(agent: string, prompt: string): unknown {
         weeklyFocus: "سلسلة «فريقي كلّو AI» 3 أجزاء",
         risks: ["لازم تحط علامة AI على فيديوهات التوأم"],
       };
+    case "problem-hunter":
+      return {
+        queries: [
+          { source: "stackexchange", q: "NSO re-deploy", where: "networkengineering" },
+          { source: "reddit", q: "whatsapp booking clinic", where: "smallbusiness" },
+        ],
+        finds: [
+          { track: "smb", url: `https://www.facebook.com/groups/lb-business/posts/${counter}`, title: "مطعم: ما عم نلحّق نرد عالطلبات عالواتساب", body: "كل ليلة عم نخسر طلبات", author: "abou.samir", organization: "مطعم أبو سمير", contact: "", postedAt: new Date(Date.now() - 86_400_000).toISOString() },
+        ],
+      };
+    case "chief-engineer":
+      return {
+        canSolve: true, fitScore: 8, valueEstimate: "بيخسرو حوالي 20 طلب بالأسبوع", reachable: true,
+        assignee: /^PROBLEM \(technical/m.test(prompt) ? "network-engineer" : "automation-engineer",
+        effortDays: { best: 2, likely: 4, worst: 7 }, price: { setup: "$400", monthly: "$50", currency: "USD" },
+        why: "مشكلة متكررة وحلّها واضح بالأتمتة", rejectReason: "", questions: [],
+      };
+    case "solution":
+      if (/^PROBLEM \(technical/m.test(prompt))
+        return {
+          summary: "إصلاح الـ re-deploy بـ NSO: sync-from قبل الـ commit واستعمال commit dry-run للتأكد",
+          rootCause: "الـ CDB مش متطابق مع الجهاز بعد تغيير يدوي، فالـ service عم يرجع يكتب فوق config قديم",
+          approach: "check-sync ← compare-config ← sync-from ← re-deploy dry-run ← re-deploy",
+          architecture: ["NSO action بيعمل check-sync", "Python script بيقرأ الـ diff", "re-deploy بعد dry-run", "تقرير بالنتيجة"],
+          steps: ["devices device X check-sync", "compare-config وتسجيل الفرق", "sync-from أو sync-to حسب القرار", "re-deploy dry-run ثم re-deploy", "اختبار بـ netsim"],
+          stack: ["Cisco NSO", "Python (ncs.maapi)", "netsim"], runningCost: "ما في كلفة إضافية", risks: ["sync-from بيمحي تغييرات ما بدنا نخسرها"],
+          demoPlan: "سكربت Python بيحاكي check-sync والـ diff وبيقرر الخطوة", sources: ["https://developer.cisco.com/docs/nso/"],
+        };
+      return {
+        summary: "رد أوتوماتيكي عالواتساب بياخد الطلب ويحطو بجدول المطبخ",
+        rootCause: "ما في حدا يرد بعد الساعة 10 بالليل",
+        approach: "WhatsApp Cloud API + n8n + Google Sheets",
+        architecture: ["WhatsApp Cloud API webhook", "n8n workflow", "Google Sheet للطلبات", "إشعار للمطبخ"],
+        steps: ["فتح حساب WhatsApp Business Platform", "workflow بـ n8n", "قالب رسالة تأكيد", "تجربة وتسليم"],
+        stack: ["WhatsApp Cloud API", "n8n", "Google Sheets"], runningCost: "حوالي $10 بالشهر", risks: ["موافقة Meta على القوالب"],
+        demoPlan: "سكربت Python بيحاكي رسالة واتساب وبيطلّع الطلب منظّم", sources: ["https://developers.facebook.com/docs/whatsapp/cloud-api"],
+      };
+    case "demo":
+      return {
+        files: [
+          { path: "order_bot.py", content: "import re\n\ndef parse(msg):\n    m = re.findall(r'(\\d+)\\s*(\\w+)', msg)\n    return [{'qty': int(q), 'item': i} for q, i in m]\n" },
+          { path: "test_order_bot.py", content: "from order_bot import parse\n\ndef test_parse():\n    assert parse('2 shawarma 1 fries') == [{'qty': 2, 'item': 'shawarma'}, {'qty': 1, 'item': 'fries'}]\n" },
+        ],
+        howToRun: "pip install pytest && pytest -q", testCommand: "pytest -q", testOutput: "1 passed in 0.01s", works: true, limitations: ["الواتساب الحقيقي محاكى"],
+      };
+    case "security-reviewer":
+      return { verdict: "approve", issues: [{ severity: "medium", issue: "رقم الزبون بينحفظ بالجدول", fix: "حذف الأرقام بعد 30 يوم" }], summary: "آمن للديمو" };
+    case "outreach-writer":
+      return {
+        channel: "facebook dm", message: "مرحبا، شفت إنكن عم تخسرو طلبات بالليل. عملت ديمو صغير بيرد لحالو عالواتساب وبيحط الطلب بجدول المطبخ. بتحب ابعتلك فيديو دقيقة؟",
+        followUp: "بس حبيت ذكّر بالديمو، إذا مش وقتو هلّق ما في مشكلة 🙏", publicReply: "", personalization: "ذكرت الطلبات بالليل",
+      };
     case "hook-writer":
       return {
         hooks: [

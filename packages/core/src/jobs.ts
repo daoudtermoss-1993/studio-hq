@@ -1,5 +1,6 @@
 import type { Job } from "@studio/db";
 import { analyzeImport, approveReel, dailyRun, processRecording, renderAvatar, weeklyMeeting, writeReel } from "./pipeline";
+import { huntProblems, qualifyProblem, solveProblem } from "./solutions";
 import { ceoStrategy } from "./strategy";
 import { analyzeViral, huntViral } from "./viral";
 
@@ -28,6 +29,12 @@ export async function runJob(job: Job) {
       return analyzeViral(p.findId);
     case "strategy":
       return ceoStrategy(job.workspaceId!);
+    case "hunt-problems":
+      return huntProblems(job.workspaceId!);
+    case "qualify-problem":
+      return qualifyProblem(p.problemId);
+    case "solve-problem":
+      return solveProblem(p.problemId);
     default:
       throw new Error(`unknown job type ${job.type}`);
   }

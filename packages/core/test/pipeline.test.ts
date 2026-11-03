@@ -4,11 +4,11 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
-  agentRuns, and, assets, brandProfiles, db, eq, jobs, lessons, memberships, pool, reels, runMigrations, sql, strategyReports, users,
+  agentRuns, and, assets, brandProfiles, connectors, db, eq, jobs, lessons, memberships, pool, problems, reels, runMigrations, sql, strategyReports, users,
   viralFinds, workspaces,
 } from "@studio/db";
 import {
-  addViralLink, adoptViral, approveReel, claimNext, complete, computeBrief, dailyRun, enqueue, levelOf, nextSlot, officeState,
+  addConnector, addViralLink, adoptViral, approveReel, buildTools, connectorsFor, reelFromProblem, setDealStatus, claimNext, complete, computeBrief, dailyRun, enqueue, levelOf, nextSlot, officeState,
   registerRecording, rejectReel, runJob, storage, weeklyMeeting, writeReel, zonedToUtc,
 } from "../src";
 
@@ -164,6 +164,54 @@ describe("full reel lifecycle (mock AI, real DB, real ffmpeg)", () => {
     expect(after.notes).toContain("مرفوض");
     const brief = await computeBrief(wsId);
     expect(brief.needs.some((n) => n.reelId === r.id)).toBe(false);
+  });
+
+  it("the engineering division hunted, qualified and solved real problems", async () => {
+    await drain();
+    const all = await db.select().from(problems).where(eq(problems.workspaceId, wsId));
+    expect(all.length).toBeGreaterThanOrEqual(3);
+    const solved = all.filter((p) => p.status === "solved");
+    expect(solved.length).toBeGreaterThan(0);
+    const s = solved[0];
+    expect(s.qualification.price.setup).toBeTruthy();
+    expect(s.solution.steps.length).toBeGreaterThan(1);
+    expect(s.demo.works).toBe(true);
+    expect(s.demo.files.length).toBeGreaterThan(0);
+    expect(s.review.verdict).toBe("approve");
+    expect(s.outreach.message.length).toBeGreaterThan(10);
+    const nso = all.find((p) => /NSO/.test(p.title) && p.qualification);
+    expect(nso?.qualification.assignee).toBe("network-engineer");
+    expect(nso?.solution?.stack).toContain("Cisco NSO");
+    const titles = all.map((p) => p.title.toLowerCase());
+    expect(new Set(titles).size).toBe(titles.length); // cross-posted duplicates are skipped
+  });
+
+  it("a solved problem becomes a case-study reel; deals move through stages", async () => {
+    const [s] = await db.select().from(problems).where(and(eq(problems.workspaceId, wsId), eq(problems.status, "solved")));
+    const reel = await reelFromProblem(s.id);
+    expect(reel?.source).toBe(`problem:${s.id}`);
+    await drain();
+    const [r] = await db.select().from(reels).where(eq(reels.id, reel!.id));
+    expect(r.status).toBe("ready_to_record");
+    await setDealStatus(wsId, s.id, "won", 400, "دفع العربون");
+    const [won] = await db.select().from(problems).where(eq(problems.id, s.id));
+    expect(won.status).toBe("won");
+    expect(won.dealValue).toBe(400);
+    expect(won.notes).toContain("won");
+  });
+
+  it("connectors: tokens are encrypted and only assigned engineers get them", async () => {
+    await addConnector(wsId, { name: "GitHub Docs", url: "https://mcp.example.com/mcp", token: "secret-123", agents: ["network-engineer"] });
+    const [row] = await db.select().from(connectors).where(eq(connectors.workspaceId, wsId));
+    expect(row.name).toBe("github-docs");
+    expect(row.tokenEnc).not.toContain("secret-123");
+    expect(await connectorsFor(wsId, "network-engineer")).toEqual([{ name: "github-docs", url: "https://mcp.example.com/mcp", token: "secret-123" }]);
+    expect(await connectorsFor(wsId, "hook-writer")).toEqual([]);
+    const built = buildTools({ webSearch: true, webFetch: true, codeExecution: true, mcp: await connectorsFor(wsId, "network-engineer"), submitSchema: { type: "object" } });
+    expect(built.tools.map((t: any) => t.type ?? t.name)).toEqual(["submit", "web_search_20250305", "web_fetch_20250910", "code_execution_20250825", "mcp_toolset"]);
+    expect(built.extra).toEqual({ mcp_servers: [{ type: "url", url: "https://mcp.example.com/mcp", name: "github-docs", authorization_token: "secret-123" }] });
+    expect(built.headers["anthropic-beta"]).toBe("mcp-client-2025-11-20");
+    await expect(addConnector(wsId, { name: "bad", url: "http://insecure.example.com", agents: [] })).rejects.toThrow();
   });
 
   it("weekly meeting proposes lessons; approving them levels the team up", async () => {

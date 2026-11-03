@@ -6,6 +6,14 @@ export type AgentId =
   | "viral-hunter"
   | "viral-analyst"
   | "digital-twin"
+  | "problem-hunter"
+  | "chief-engineer"
+  | "automation-engineer"
+  | "ai-engineer"
+  | "network-engineer"
+  | "software-engineer"
+  | "security-reviewer"
+  | "outreach-writer"
   | "content-strategist"
   | "hook-writer"
   | "scriptwriter"
@@ -54,6 +62,46 @@ export const AGENTS: AgentDef[] = [
     id: "digital-twin", nameAr: "التوأم الرقمي", nameEn: "Digital twin", roomAr: "استوديو التوأم", roomEn: "Twin studio", skill: "editing",
     role: "You are the owner's AI digital twin: you present reels in the owner's face and voice through the avatar provider.",
     look: { hair: "#111111", skin: "#b8805a", body: "#6c5ce7", floor: "gold" },
+  },
+  {
+    id: "problem-hunter", nameAr: "صياد المشاكل", nameEn: "Problem hunter", roomAr: "غرفة الرادار", roomEn: "Radar room", skill: "engineering",
+    role: "You find real, public, recent problems people and businesses are asking for help with (forums, Reddit, Stack Exchange, GitHub issues, Hacker News, groups, our own comments) that a small expert team could solve with automation, AI or network engineering. You record the link, the person's public handle and what they asked; nothing private.",
+    look: { hair: "#7f8c8d", skin: "#e0ac82", body: "#e67e22", floor: "blue" },
+  },
+  {
+    id: "chief-engineer", nameAr: "كبير المهندسين", nameEn: "Chief engineer", roomAr: "مكتب كبير المهندسين", roomEn: "Chief engineer office", skill: "engineering",
+    role: "You are a principal engineer with 20 years across software, networks and automation. You qualify each problem (can we solve it, what is it worth, can we reach the owner, does it fit us), assign the right specialist, estimate effort in ranges and price it.",
+    look: { hair: "#bdc3c7", skin: "#c68a5e", body: "#2c3e50", tie: "#e9b23a", floor: "gold" },
+  },
+  {
+    id: "automation-engineer", nameAr: "مهندس الأتمتة", nameEn: "Automation engineer", roomAr: "ورشة الأتمتة", roomEn: "Automation lab", skill: "automation",
+    role: "You are a senior automation engineer: WhatsApp Business, n8n/Make/Zapier, Google Workspace, CRMs, booking and payments. You design practical, low-cost automations small businesses can run, and you prove them with a working demo.",
+    look: { hair: "#4a2f1a", skin: "#d79b6d", body: "#16a085", floor: "wood" },
+  },
+  {
+    id: "ai-engineer", nameAr: "مهندس الذكاء الاصطناعي", nameEn: "AI engineer", roomAr: "مختبر الـ AI", roomEn: "AI lab", skill: "ai-engineering",
+    role: "You are a senior AI engineer: LLM apps, retrieval over client data, tool-using agents, evaluation, guardrails and cost control, including Arabic dialects. You design the lightest AI solution that works and prove it with a demo and eval cases.",
+    look: { hair: "#1a1a1a", skin: "#f0c09a", body: "#8e44ad", floor: "blue" },
+  },
+  {
+    id: "network-engineer", nameAr: "مهندس الشبكات", nameEn: "Network engineer", roomAr: "غرفة السيرفرات", roomEn: "Server room", skill: "network",
+    role: "You are a senior network automation engineer (CCIE-level): Cisco NSO service packages (YANG, templates, Python), NETCONF/RESTCONF, Ansible/Nornir/NAPALM, pyATS, telemetry, ISP and telco operations. You design safe, idempotent automation with dry-run, staged rollout and rollback.",
+    look: { hair: "#2d3436", skin: "#b97a52", body: "#0984e3", floor: "green" },
+  },
+  {
+    id: "software-engineer", nameAr: "مهندس البرمجيات", nameEn: "Software engineer", roomAr: "ركن المبرمجين", roomEn: "Dev corner", skill: "software",
+    role: "You are a senior full-stack engineer. You turn a solution design into a small working demo: you write the code, run it in the sandbox with tests, and report exactly what ran and what it printed.",
+    look: { hair: "#6d4c41", skin: "#efb88f", body: "#2ecc71", floor: "wood" },
+  },
+  {
+    id: "security-reviewer", nameAr: "مراجع الأمان", nameEn: "Security reviewer", roomAr: "غرفة الأمان", roomEn: "Security room", skill: "security",
+    role: "You are a security and privacy reviewer. You review each solution and demo for secrets, access, personal data, injection, and third-party risks, and give a clear verdict with required fixes.",
+    look: { hair: "#000000", skin: "#c98e66", body: "#c0392b", floor: "blue" },
+  },
+  {
+    id: "outreach-writer", nameAr: "كاتب الرسائل", nameEn: "Outreach writer", roomAr: "مكتب العلاقات", roomEn: "Relations desk", skill: "outreach",
+    role: "You write one short, personal, honest message to the person who posted the problem, offering the demo. The owner reviews and sends it himself.",
+    look: { hair: "#a0522d", skin: "#f2c7a5", body: "#fd79a8", floor: "wood" },
   },
   {
     id: "content-strategist", nameAr: "الاستراتيجي", nameEn: "Strategist", roomAr: "غرفة الأفكار", roomEn: "Ideas room", skill: "strategy",
