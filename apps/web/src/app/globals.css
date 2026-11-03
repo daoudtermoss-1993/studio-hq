@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #0e1430;
+  --color-ink-2: #151b38;
+  --color-ink-3: #1d2546;
+  --color-line: #2c3562;
+  --color-paper: #f6f3ec;
+  --color-text: #e9ebf7;
+  --color-muted: #9aa2c8;
+  --color-gold: #e9b23a;
+  --color-gold-ink: #1b1405;
+  --color-coral: #ff6b6b;
+  --color-ok: #47d18c;
+  --color-sky: #7aa2ff;
+  --font-sans: "IBM Plex Sans Arabic", "Cairo", Tahoma, system-ui, sans-serif;
+  --font-display: "Cairo", "IBM Plex Sans Arabic", Tahoma, sans-serif;
+  --font-pixel: "Press Start 2P", ui-monospace, monospace;
+}
+
+html,
+body {
+  background: var(--color-ink);
+  color: var(--color-text);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition disabled:opacity-50;
+}
+@utility btn-gold {
+  @apply btn bg-gold text-gold-ink hover:brightness-105;
+}
+@utility btn-ghost {
+  @apply btn border border-line text-text hover:bg-ink-3;
+}
+@utility card {
+  @apply rounded-2xl border border-line bg-ink-2 p-5;
+}
+@utility input {
+  @apply w-full rounded-lg border border-line bg-ink px-3 py-2 text-sm text-text placeholder:text-muted focus:border-gold focus:outline-none;
+}
+@utility label {
+  @apply mb-1 block text-sm font-semibold text-muted;
+}
+@utility chip {
+  @apply inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold;
+}
+@utility bidi {
+  unicode-bidi: plaintext;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes scrolllines {
+  to {
+    background-position: 0 5px;
+  }
+}
+@keyframes pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+  10% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

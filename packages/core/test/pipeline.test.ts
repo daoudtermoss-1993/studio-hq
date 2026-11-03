@@ -136,6 +136,18 @@ describe("full reel lifecycle (mock AI, real DB, real ffmpeg)", () => {
     expect(failed).toHaveLength(0);
   });
 
+  it("jobs of one workspace never run concurrently", async () => {
+    await db.update(jobs).set({ status: "done" });
+    await enqueue("write-reel", wsId, { reelId: "a" });
+    await enqueue("write-reel", wsId, { reelId: "b" });
+    const first = await claimNext();
+    expect(first).not.toBeNull();
+    expect(await claimNext()).toBeNull();
+    await complete(first!);
+    expect(await claimNext()).not.toBeNull();
+    await db.update(jobs).set({ status: "done" });
+  });
+
   it("cron jobs are enqueued once per day", async () => {
     const a = await enqueue("daily-run", wsId, {}, { dedupeKey: "daily:2026-11-03", once: true });
     await db.update(jobs).set({ status: "done" }).where(eq(jobs.id, a.id));

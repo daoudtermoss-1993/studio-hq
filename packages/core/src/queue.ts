@@ -33,16 +33,26 @@ export async function enqueue(
   return job;
 }
 
-/** Atomically claims the next due job (safe with many workers: FOR UPDATE SKIP LOCKED). */
+/**
+ * Atomically claims the next due job. Jobs of one workspace run one at a time (no races between
+ * e.g. the daily run and an approval), different workspaces run in parallel. Claims are serialized
+ * with a transaction-level advisory lock so two workers can't pick two jobs of the same workspace.
+ */
 export async function claimNext(): Promise<Job | null> {
-  const res = await db.execute<{ id: string }>(sql`
-    UPDATE jobs SET status = 'running', locked_at = now(), attempts = attempts + 1, updated_at = now()
-    WHERE id = (
-      SELECT id FROM jobs WHERE status = 'queued' AND run_at <= now()
-      ORDER BY run_at ASC LIMIT 1 FOR UPDATE SKIP LOCKED
-    )
-    RETURNING id`);
-  const id = res.rows[0]?.id;
+  const id = await db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(814207)`);
+    const res = await tx.execute<{ id: string }>(sql`
+      UPDATE jobs SET status = 'running', locked_at = now(), attempts = attempts + 1, updated_at = now()
+      WHERE id = (
+        SELECT j.id FROM jobs j
+        WHERE j.status = 'queued' AND j.run_at <= now()
+          AND (j.workspace_id IS NULL OR NOT EXISTS (
+            SELECT 1 FROM jobs r WHERE r.status = 'running' AND r.workspace_id = j.workspace_id))
+        ORDER BY j.run_at ASC LIMIT 1 FOR UPDATE SKIP LOCKED
+      )
+      RETURNING id`);
+    return res.rows[0]?.id;
+  });
   if (!id) return null;
   const [job] = await db.select().from(jobs).where(eq(jobs.id, id));
   return job ?? null;
