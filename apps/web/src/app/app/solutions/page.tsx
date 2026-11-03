@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { engineerName, recentProblems } from "@studio/core";
-import { addProblemAction, huntProblemsNow } from "@/app/actions/studio";
+import { brandOf, engineerName, recentProblems } from "@studio/core";
+import { addProblemAction, auditSiteAction, huntOpportunitiesNow, huntProblemsNow } from "@/app/actions/studio";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { currentWorkspace } from "@/lib/auth";
 import { getT } from "@/lib/i18n";
@@ -20,7 +20,7 @@ const STATUS_STYLE: Record<string, string> = {
 
 export default async function SolutionsPage() {
   const [{ workspace }, { t, locale }] = await Promise.all([currentWorkspace(), getT()]);
-  const all = await recentProblems(workspace.id, 200);
+  const [all, brand] = await Promise.all([recentProblems(workspace.id, 200), brandOf(workspace.id)]);
   const won = all.filter((p) => p.status === "won");
   const wonValue = won.reduce((s, p) => s + (p.dealValue ?? 0), 0);
   const busy = all.some((p) => p.status === "new" || p.status === "qualified" || p.status === "solving");
@@ -40,6 +40,27 @@ export default async function SolutionsPage() {
           <form action={huntProblemsNow}><button className="btn-gold">🔎 {t.huntProblems}</button></form>
         </div>
       </div>
+
+      <section className="card space-y-4">
+        <div>
+          <h2 className="font-bold text-gold">🗺️ {t.oppTitle}</h2>
+          <p className="text-sm text-muted">{t.oppSub}</p>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <form action={huntOpportunitiesNow} className="flex flex-wrap items-end gap-3">
+            <div className="min-w-40 flex-1"><label className="label" htmlFor="vertical">{t.vertical}</label><input id="vertical" name="vertical" required dir="auto" className="input" defaultValue={brand.oppVertical} /></div>
+            <div className="min-w-32 flex-1"><label className="label" htmlFor="city">{t.city}</label><input id="city" name="city" required dir="auto" className="input" defaultValue={brand.oppCity} /></div>
+            <div className="w-24"><label className="label" htmlFor="limit">{t.howMany}</label><input id="limit" name="limit" type="number" min={1} max={20} defaultValue={10} dir="ltr" className="input" /></div>
+            <button className="btn-gold">🔎 {t.huntBusinesses}</button>
+          </form>
+          <form action={auditSiteAction} className="flex flex-wrap items-end gap-3">
+            <div className="min-w-48 flex-1"><label className="label" htmlFor="siteurl">{t.siteUrl}</label><input id="siteurl" name="url" required dir="ltr" className="input" placeholder="clinic-example.com" /></div>
+            <div className="min-w-36 flex-1"><label className="label" htmlFor="bname">{t.businessName}</label><input id="bname" name="name" dir="auto" className="input" /></div>
+            <button className="btn-ghost">⚡ {t.auditSite}</button>
+          </form>
+        </div>
+        <p className="text-xs text-muted">{t.googleNote}</p>
+      </section>
 
       <details className="card">
         <summary className="cursor-pointer font-bold">＋ {t.addProblem}</summary>
@@ -71,9 +92,12 @@ export default async function SolutionsPage() {
                 <Link key={p.id} href={`/app/solutions/${p.id}`} className="card block space-y-2 transition hover:border-gold">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`chip ${STATUS_STYLE[p.status]}`}>{t.pstatus[p.status]}</span>
-                    <span className="chip bg-ink-3 text-muted">{t.track[p.track as "smb" | "technical"] ?? p.track}</span>
+                    {p.kind === "opportunity"
+                      ? <span className="chip bg-sky text-ink">{t.kindOpp}{!p.website && ` · ${t.noWebsite}`}</span>
+                      : <span className="chip bg-ink-3 text-muted">{t.track[p.track as "smb" | "technical"] ?? p.track}</span>}
+                    {p.audit?.score && p.website && <span className={`chip ${p.audit.score.score < 50 ? "bg-coral text-white" : p.audit.score.score < 80 ? "bg-gold text-gold-ink" : "bg-ok text-ink"}`} dir="ltr">{p.audit.score.score}/100</span>}
                     <span className="chip bg-ink-3 text-muted" dir="ltr">{p.source}</span>
-                    {p.qualification && <span className="chip bg-gold text-gold-ink" dir="ltr">{p.qualification.fitScore}/10</span>}
+                    {p.qualification && p.kind !== "opportunity" && <span className="chip bg-gold text-gold-ink" dir="ltr">{p.qualification.fitScore}/10</span>}
                   </div>
                   <p className="bidi font-semibold leading-snug">{p.title}</p>
                   <div className="flex flex-wrap gap-3 text-xs text-muted">

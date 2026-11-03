@@ -15,6 +15,7 @@ const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 const step = (s) => console.log("•", s);
+let previewOverflow = null;
 const shot = (name) => page.screenshot({ path: `${SHOTS}/${name}.png`, fullPage: true });
 
 async function waitFor(fn, label, timeout = 120_000) {
@@ -121,6 +122,36 @@ try {
   if ((await page.content()).includes("secret-token")) throw new Error("token leaked to the page");
   await shot("08f-connectors");
 
+  step("opportunities: hunt clinics → measured audit → design → offer");
+  await page.goto(`${BASE}/app/solutions`);
+  await page.click("button:has-text('دوّر على محلات وافحصن')");
+  const clinic = "a:has-text('عيادة د. سمير للأسنان')";
+  await waitFor(async () => (await page.locator(`${clinic} .chip:text-is('الحل جاهز')`).count()) > 0, "clinic offer ready", 180_000);
+  await shot("08g-opportunities");
+  await Promise.all([page.waitForURL("**/app/solutions/*"), page.locator(clinic).first().click()]);
+  await page.waitForTimeout(1500);
+  await shot("08h-clinic");
+  const href = await page.locator("a:has-text('افتح التصوّر')").getAttribute("href");
+  const res = await page.request.get(`${BASE}${href}`);
+  const csp = res.headers()["content-security-policy"] ?? "";
+  const body = await res.text();
+  if (!csp.includes("sandbox") || !body.includes("مش الموقع الرسمي") || /<script/i.test(body)) throw new Error("concept preview is not sandboxed/bannered");
+  const pv = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+  await pv.goto(`${BASE}${href}`);
+  await pv.waitForTimeout(1000);
+  await pv.screenshot({ path: `${SHOTS}/08i-concept-mobile.png`, fullPage: true });
+  previewOverflow = await pv.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
+  await pv.setViewportSize({ width: 1440, height: 900 });
+  await pv.waitForTimeout(500);
+  await pv.screenshot({ path: `${SHOTS}/08j-concept-desktop.png` });
+  await pv.close();
+
+  step("audit a pasted site");
+  await page.goto(`${BASE}/app/solutions`);
+  await page.fill("#siteurl", "my-clinic-fast.example");
+  await Promise.all([page.waitForURL("**/app/solutions/*"), page.click("button:has-text('افحص موقع')")]);
+  await waitFor(async () => (await page.locator(".chip:text-is('مرفوضة')").count()) > 0, "good site skipped");
+
   step("weekly meeting");
   await page.goto(`${BASE}/app/meeting`);
   await page.click("text=اعقد الاجتماع الآن");
@@ -153,7 +184,7 @@ try {
   }
   await mobile.screenshot({ path: `${SHOTS}/13-mobile-connectors.png`, fullPage: true });
 
-  console.log(JSON.stringify({ ok: true, pageErrors: errors, mobileOverflow: overflow }));
+  console.log(JSON.stringify({ ok: true, pageErrors: errors, mobileOverflow: overflow, conceptMobileOverflow: previewOverflow }));
 } catch (e) {
   await shot("error");
   console.log(JSON.stringify({ ok: false, error: String(e), pageErrors: errors }));

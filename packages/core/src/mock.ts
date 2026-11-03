@@ -10,6 +10,8 @@ const TOPICS = [
   "غلطة بتعملها كل يوم بـ ChatGPT",
   "كيف تصوّر ريل بموبايل بس",
 ];
+import { mockHomepage } from "./mock-site";
+
 let counter = 0;
 
 function pickCount(prompt: string) {
@@ -131,7 +133,58 @@ export function mockAgent(agent: string, prompt: string): unknown {
       };
     case "security-reviewer":
       return { verdict: "approve", issues: [{ severity: "medium", issue: "رقم الزبون بينحفظ بالجدول", fix: "حذف الأرقام بعد 30 يوم" }], summary: "آمن للديمو" };
+    case "opportunity-scout":
+      return { businesses: [{ name: "عيادة النخبة للأسنان", website: "https://nokhba-dental.example", phone: "+961 1 000 004", address: "الأشرفية، بيروت", sourceUrl: "https://nokhba-dental.example", why: "موقع قديم بلا حجز" }] };
+    case "web-auditor": {
+      const score = Number(prompt.match(/OUR SCORE: (\d+)/)?.[1] ?? 0);
+      const noSite = /WEBSITE: \(none\)/.test(prompt);
+      return {
+        headline: noSite ? "ما عندكن موقع: يلّي بيدوّر عليكن بـ Google ما بيلاقي وين يحجز" : score >= 80 ? "موقعكن سريع ومرتّب" : "موقعكن بياخد 9.4 ثواني ليبيّن عالموبايل",
+        summary: noSite ? "المرضى بيلاقوكن عالخريطة بس ما في صفحة تشرح الخدمات أو زر حجز." : score >= 80 ? "ما في شي كبير لازم يتصلّح." : "الصفحة تقيلة (6.1 MB) وما في زر واتساب، فكتير ناس بيفلّو قبل ما يحجزو.",
+        topIssues: noSite ? [{ findingId: "no-site", plain: "ما في موقع", impact: "خسارة مرضى عم يدوّرو أونلاين" }] : [
+          { findingId: "slow-lcp", plain: "الصفحة بتبيّن بعد 9.4 ثواني", impact: "أغلب الزوار بيفلّو بعد 3 ثواني" },
+          { findingId: "no-whatsapp", plain: "ما في زر واتساب", impact: "المريض لازم ينسخ الرقم بإيدو" },
+          { findingId: "tls-expiring", plain: "شهادة الأمان بتخلص بعد 12 يوم", impact: "المتصفح رح يحذّر الزوار" },
+        ],
+        quickWins: noSite ? ["صفحة وحدة فيها حجز عالواتساب"] : ["ضغط الصور", "زر واتساب ثابت", "تجديد الشهادة"],
+        recommendedPackage: noSite ? "new-site" : "speed-fix",
+        worthIt: noSite || score < 80, why: noSite ? "عيادة شغّالة وتقييمها منيح بس ما إلها موقع" : score >= 80 ? "الموقع منيح" : "مشاكل واضحة بالأرقام وحلّها سريع",
+        siteLanguage: "ar",
+      };
+    }
+    case "web-designer": {
+      const name = prompt.match(/BUSINESS: (.+)/)?.[1]?.trim() ?? "العيادة";
+      const phone = prompt.match(/PHONE: (\+?[\d ]+)/)?.[1] ?? "";
+      return {
+        concept: "هادي، نظيف وموثوق: لون أخضر مائي طبي مع لمسة دافية، والحجز عالواتساب بكل شاشة",
+        audience: "عائلات وموظفين بالمنطقة بين 25 و55، أغلبن عالموبايل",
+        palette: [{ name: "Teal", hex: "#0e6e6b", use: "الأزرار والعناوين" }, { name: "Apricot", hex: "#f4a259", use: "تمييز" }, { name: "Ink", hex: "#13232f", use: "النص" }, { name: "Mist", hex: "#f7faf9", use: "الخلفية" }],
+        typography: { heading: "IBM Plex Sans Arabic 700", body: "IBM Plex Sans Arabic 400", scale: "clamp 16→18px body, 32→58px h1" },
+        sitemap: ["الرئيسية", "الخدمات (صفحة لكل خدمة)", "الأطباء", "الأسعار", "الحجز", "تواصل"],
+        html: mockHomepage(name, phone),
+        backend: {
+          architecture: ["Astro static site على Cloudflare Pages (CDN)", "زر واتساب + Cal.com للحجز", "تذكير قبل الموعد بـ WhatsApp Cloud API template", "Decap CMS لتعديل الخدمات والدوام"],
+          stack: ["Astro", "Cloudflare Pages", "Cal.com", "WhatsApp Cloud API", "Decap CMS", "Plausible"],
+          dataModel: ["services(name, from_price, duration)", "hours(day, open, close)", "bookings via Cal.com"],
+          integrations: ["Google Business Profile link", "WhatsApp Business", "Google Maps embed (click-to-load)"],
+          hosting: "Cloudflare Pages (مجاني) + الدومين باسم العيادة",
+          performanceBudget: ["HTML+CSS < 60 KB", "LCP < 2s على 4G", "صور AVIF مع width/height"],
+          seo: ["Dentist JSON-LD", "صفحة لكل خدمة", "sitemap.xml", "عناوين بالعربي والإنكليزي"],
+          security: ["HSTS + CSP", "ما في بيانات مرضى عالموقع", "الحسابات باسم العيادة"],
+          monthlyCost: "حوالي $10 بالشهر (Cal.com مجاني، الدومين ~$15 بالسنة)",
+        },
+        buildPlan: [{ phase: "التصميم النهائي والمحتوى", days: 2, deliverable: "صفحات معتمدة" }, { phase: "البناء والحجز", days: 3, deliverable: "موقع شغّال على رابط تجريبي" }, { phase: "الإطلاق وGoogle", days: 1, deliverable: "الدومين، Google Business، تقرير قبل/بعد" }],
+        placeholders: ["أسماء الأطباء", "الأسعار", "الدوام", "صور حقيقية للعيادة"],
+      };
+    }
     case "outreach-writer":
+      if (/CONCEPT LINK/.test(prompt)) {
+        const link = prompt.match(/CONCEPT LINK[^:]*: (\S+)/)?.[1] ?? "";
+        return {
+          channel: "WhatsApp", message: `مرحبا، أنا داود من بيروت. فحصت موقع العيادة عالموبايل: بياخد حوالي 9 ثواني ليبيّن، وما في زر واتساب للحجز. عملتلكن تصوّر لصفحة رئيسية أسرع وفيها حجز بكبسة: ${link}\nإذا حابين، بشرحلكن بـ 10 دقايق شو بيلزم ليصير حقيقي؟`,
+          followUp: "مرحبا مجدداً 🙏 بس حبيت إتأكد إنو وصلكن التصوّر. إذا مش وقتو هلّق، ما في مشكلة.", publicReply: "", personalization: "رقم السرعة + زر الواتساب",
+        };
+      }
       return {
         channel: "facebook dm", message: "مرحبا، شفت إنكن عم تخسرو طلبات بالليل. عملت ديمو صغير بيرد لحالو عالواتساب وبيحط الطلب بجدول المطبخ. بتحب ابعتلك فيديو دقيقة؟",
         followUp: "بس حبيت ذكّر بالديمو، إذا مش وقتو هلّق ما في مشكلة 🙏", publicReply: "", personalization: "ذكرت الطلبات بالليل",

@@ -72,6 +72,28 @@ Prefer read-only connectors. Built-in sources show whether their key is set.
 **Skills**: every engineer has an expert playbook in `packages/core/src/skills.ts` (engineering, automation, ai-engineering,
 network, software, security, outreach) plus the lessons the owner approves in the weekly meeting.
 
+## Opportunities division (websites & local presence)
+
+Instead of waiting for someone to post a problem, the team finds local businesses (default: dental clinics in Beirut — editable on
+the Solutions page) and prepares an offer they can say yes to.
+
+| Agent | Does | Tools |
+|---|---|---|
+| Opportunity scout | Finds businesses of a type in a city | Google Places API (New), or web search without a key |
+| Website auditor | Explains the **measured** audit in plain words, picks the package | PageSpeed Insights (mobile), TLS, one homepage fetch (code, not the model) |
+| Lead designer (UI + backend) | Visual system + a complete responsive homepage (real HTML) + the architecture, stack, cost and build plan | quality gate, software + security skills |
+| Outreach writer | One personal WhatsApp message with a measured fact and the private concept link | — |
+
+Flow: `hunt-opportunities` → `audit-site` (score 0–100 in code: speed 35, booking/contact 20, trust 15, mobile 15, Google visibility 15;
+sites ≥ 80 without serious findings are skipped) → `design-site` (HTML must pass `checkMockup`: one h1, ≥4 sections, wa.me/tel CTA,
+responsive, no JS, no external images, < 120 KB; one automatic fix round) → fixed-price offer from the service catalog in settings →
+message. The concept is served at `/p/<token>`: unlisted, `noindex`, sandbox CSP (no scripts, opaque origin) and a fixed
+"concept — not the official website" banner.
+
+Guardrails: passive checks only (no vulnerability scanning of sites we don't own); fetches are restricted to public addresses
+(SSRF guard, redirects re-checked, robots.txt respected); Google Places content other than `place_id` is cleared after 30 days
+unless the owner is in contact with the business (`purgeGoogleData`, daily). Hunting is manual (button) so you control the spend.
+
 ## Run locally
 
 Requirements: Node 22, pnpm 10, PostgreSQL 16, ffmpeg, Python 3 (+ `pip install faster-whisper` for subtitles).

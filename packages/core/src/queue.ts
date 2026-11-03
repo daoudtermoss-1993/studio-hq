@@ -14,7 +14,10 @@ export type JobType =
   | "strategy"
   | "hunt-problems"
   | "qualify-problem"
-  | "solve-problem";
+  | "solve-problem"
+  | "hunt-opportunities"
+  | "audit-site"
+  | "design-site";
 
 /**
  * Enqueue a background job.

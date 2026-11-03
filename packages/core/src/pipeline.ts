@@ -17,6 +17,7 @@ import {
 import { storage } from "./storage";
 import { ask, log, runAgent } from "./team";
 import { addDays, localDate, zonedToUtc } from "./time";
+import { purgeGoogleData } from "./opportunities";
 import { huntProblems, problemBlock, solutionsSummary } from "./solutions";
 import { ceoStrategy } from "./strategy";
 import { editReel, extractFrame, whisperLang } from "./video";
@@ -446,6 +447,7 @@ export async function dailyRun(workspaceId: string) {
     if (!strategy || Date.now() - +strategy.createdAt > 7 * 86_400_000) await ceoStrategy(workspaceId);
     await huntViral(workspaceId);
     await huntProblems(workspaceId);
+    await purgeGoogleData(workspaceId);
     for (const r of await reelsWhere(workspaceId, "recorded")) if (r.rawAssetId) await processRecording(r.id);
     for (const r of await reelsWhere(workspaceId, "approved")) await schedule(r, brand);
     for (const r of await reelsWhere(workspaceId, "idea")) await writeReel(r.id);

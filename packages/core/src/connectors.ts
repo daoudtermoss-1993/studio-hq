@@ -70,6 +70,8 @@ export function builtInSources() {
     { id: "github", ready: true, boosted: Boolean(process.env.GITHUB_TOKEN) },
     { id: "reddit", ready: Boolean(process.env.REDDIT_CLIENT_ID && process.env.REDDIT_CLIENT_SECRET) },
     { id: "youtube", ready: Boolean(process.env.YOUTUBE_API_KEY) },
+    { id: "google-places", ready: Boolean(process.env.GOOGLE_MAPS_API_KEY) },
+    { id: "pagespeed", ready: true, boosted: Boolean(process.env.PAGESPEED_API_KEY) },
     { id: "heygen", ready: Boolean(process.env.HEYGEN_API_KEY) },
   ];
 }

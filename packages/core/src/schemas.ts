@@ -283,3 +283,50 @@ export const OutreachOut = z.object({
 export type Qualify = z.infer<typeof QualifyOut>;
 export type Solution = z.infer<typeof SolutionOut>;
 export type Demo = z.infer<typeof DemoOut>;
+
+// ---------- opportunities division (websites & local presence) ----------
+
+export const ScoutOut = z.object({
+  businesses: z
+    .array(z.object({
+      name: z.string(), website: z.string().default(""), phone: z.string().default(""), address: z.string().default(""),
+      sourceUrl: z.string().default(""), why: z.string().default(""),
+    }))
+    .max(15),
+});
+
+export const AuditReportOut = z.object({
+  headline: z.string(),
+  summary: z.string(),
+  topIssues: z.array(z.object({ findingId: z.string(), plain: z.string(), impact: z.string() })).max(5),
+  quickWins: z.array(z.string()).max(6).default([]),
+  recommendedPackage: z.string(),
+  worthIt: z.boolean(),
+  why: z.string(),
+  siteLanguage: z.string().default("ar"),
+});
+
+export const DesignOut = z.object({
+  concept: z.string(),
+  audience: z.string(),
+  palette: z.array(z.object({ name: z.string(), hex: z.string().regex(/^#[0-9a-fA-F]{6}$/), use: z.string() })).min(3).max(6),
+  typography: z.object({ heading: z.string(), body: z.string(), scale: z.string().default("") }),
+  sitemap: z.array(z.string()).min(3),
+  html: z.string().min(2000),
+  backend: z.object({
+    architecture: z.array(z.string()).min(3),
+    stack: z.array(z.string()).min(2),
+    dataModel: z.array(z.string()).default([]),
+    integrations: z.array(z.string()).default([]),
+    hosting: z.string(),
+    performanceBudget: z.array(z.string()).default([]),
+    seo: z.array(z.string()).default([]),
+    security: z.array(z.string()).default([]),
+    monthlyCost: z.string(),
+  }),
+  buildPlan: z.array(z.object({ phase: z.string(), days: z.number(), deliverable: z.string() })).min(2),
+  placeholders: z.array(z.string()).default([]),
+});
+
+export type AuditReport = z.infer<typeof AuditReportOut>;
+export type Design = z.infer<typeof DesignOut>;

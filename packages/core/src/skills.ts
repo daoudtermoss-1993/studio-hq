@@ -4,7 +4,7 @@
  */
 export type SkillId =
   | "general" | "writing" | "strategy" | "trends" | "editing" | "analytics" | "viral" | "monetization"
-  | "engineering" | "automation" | "ai-engineering" | "network" | "software" | "security" | "outreach";
+  | "engineering" | "automation" | "ai-engineering" | "network" | "software" | "security" | "outreach" | "web-audit" | "web-design";
 
 export const SKILLS: Record<SkillId, { nameAr: string; nameEn: string; rules: string }> = {
   general: {
@@ -145,6 +145,35 @@ high (before launch), medium, low. Never approve storing card data or passwords 
 the first message, under 90 words, in their language. Respect the platform: reply in the public thread only if helpful on its own;
 DMs only where the platform allows and the person is reachable; never mass-send; stop after one follow-up without reply.
 The owner reviews and sends every message personally.`,
+  },
+  "web-audit": {
+    nameAr: "تدقيق المواقع",
+    nameEn: "Website audit",
+    rules: `Core Web Vitals thresholds (75th percentile, mobile): LCP good ≤2.5s, poor >4s; INP good ≤200ms, poor >500ms; CLS good ≤0.1,
+poor >0.25. Field data (real users, CrUX) beats lab data when present; say which one you used. Translate every metric into the owner's
+world: "your page shows a white screen for 9 seconds on a phone — most visitors leave after 3". For local businesses the money is in:
+a visible WhatsApp/call button above the fold, online booking, opening hours, location/map, real reviews, and appearing in Google
+Maps/local search (Google Business Profile + LocalBusiness/Dentist schema). Typical causes: unoptimized images (WebP/AVIF, sizes),
+render-blocking CSS/JS, heavy page builders and plugins, no caching/CDN, slow shared hosting, web fonts without display=swap.
+Order fixes by impact ÷ effort. Never shame the business; never publish their audit; never run security scans on sites we don't own.`,
+  },
+  "web-design": {
+    nameAr: "تصميم وبناء المواقع (UI + Backend)",
+    nameEn: "Web design & architecture (UI + backend)",
+    rules: `UI: mobile-first (design at 360px, then scale), one primary action per screen (WhatsApp booking) repeated in a sticky bar on
+mobile, clear hierarchy (one h1, scannable sections), 8-pt spacing scale, fluid type with clamp(), max line length ~70ch, real contrast
+(WCAG AA 4.5:1 for text), visible focus states, tap targets ≥44px, semantic HTML (header/nav/main/section/footer), RTL done properly
+(dir="rtl", logical CSS properties: margin-inline, padding-inline, inset-inline), bilingual when the audience is (Arabic + English or
+French). Visual system: 1 brand color + 1 accent + neutrals, generous whitespace, soft radii, subtle shadows, no stock-photo clichés —
+use inline SVG illustration/icons and CSS shapes. Copy: benefit-led headline, services with plain prices or "from", trust (years,
+certifications, Google rating ONLY if given as a fact), FAQ, hours, location, contact. Never invent reviews, testimonials, doctor names,
+prices or awards: use clearly marked placeholders like [اسم الطبيب] for anything not provided.
+Performance budget: <100 KB critical HTML+CSS, no render-blocking JS, LCP <2.5s on 4G, fonts with display=swap, images AVIF/WebP with
+width/height. Backend: static-first (Astro or Next.js static export) on a CDN (Cloudflare Pages/Vercel), booking via WhatsApp deep
+link + optional Cal.com or a small API (Postgres/Supabase) with reminders through WhatsApp Cloud API templates; admin for the owner to edit
+services/hours (headless CMS like Sanity/Decap or a simple dashboard); LocalBusiness/Dentist JSON-LD, sitemap, Open Graph; analytics
+without cookies (Plausible/Umami); security headers (CSP, HSTS), spam protection on forms, backups, the client owns domain and accounts.
+Always give the monthly running cost and a phased build plan with days.`,
   },
   analytics: {
     nameAr: "الأرقام والمجتمع",

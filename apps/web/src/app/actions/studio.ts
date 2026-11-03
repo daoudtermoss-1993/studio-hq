@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
-  addConnector, addProblem, addViralLink, adoptViral, answerQuestion, dismissViral, enqueue, markPosted, reelFromProblem, rejectReel,
+  addConnector, addProblem, addSiteToAudit, addViralLink, adoptViral, answerQuestion, dismissViral, enqueue, markPosted, reelFromProblem, rejectReel,
   removeConnector, secretReady, setConnectorEnabled, setDealStatus,
 } from "@studio/core";
 import { and, brandProfiles, dataImports, db, eq, lessons, memberships, problems, reels, viralFinds, workspaces } from "@studio/db";
@@ -47,6 +47,7 @@ function brandFields(f: FormData) {
     avatarId: str(f, "avatarId"),
     voiceId: str(f, "voiceId"),
     solutionTracks: f.getAll("solutionTracks").map(String).filter((x) => x === "smb" || x === "technical"),
+    ...(str(f, "serviceCatalog") ? { serviceCatalog: str(f, "serviceCatalog").slice(0, 4000) } : {}),
     techFocus: str(f, "techFocus") || "network automation (Cisco NSO, YANG, NETCONF/RESTCONF), AI & workflow automation",
   };
 }
@@ -264,8 +265,29 @@ export async function rerunProblem(form: FormData) {
   const id = str(form, "problemId");
   const [p] = await db.select().from(problems).where(and(eq(problems.id, id), eq(problems.workspaceId, workspace.id)));
   if (!p) return;
-  const type = p.status === "new" || p.status === "rejected" ? "qualify-problem" : "solve-problem";
-  if (type === "solve-problem") await db.update(problems).set({ status: "solving" }).where(eq(problems.id, id));
-  await enqueue(type, workspace.id, { problemId: id }, { dedupeKey: `${type === "qualify-problem" ? "qualify" : "solve"}:${id}` });
+  const first = p.status === "new" || p.status === "rejected";
+  const type = p.kind === "opportunity" ? (first ? "audit-site" : "design-site") : first ? "qualify-problem" : "solve-problem";
+  if (!first) await db.update(problems).set({ status: "solving" }).where(eq(problems.id, id));
+  const key = { "audit-site": "audit", "design-site": "design", "qualify-problem": "qualify", "solve-problem": "solve" }[type];
+  await enqueue(type, workspace.id, { problemId: id }, { dedupeKey: `${key}:${id}` });
   revalidatePath(`/app/solutions/${id}`);
+}
+
+export async function huntOpportunitiesNow(form: FormData) {
+  const { workspace } = await currentWorkspace();
+  const vertical = str(form, "vertical").slice(0, 80);
+  const city = str(form, "city").slice(0, 80);
+  const limit = int(form, "limit", 10, 1, 20);
+  if (vertical && city) await db.update(brandProfiles).set({ oppVertical: vertical, oppCity: city }).where(eq(brandProfiles.workspaceId, workspace.id));
+  await enqueue("hunt-opportunities", workspace.id, { vertical, city, limit }, { dedupeKey: "manual-hunt-opportunities" });
+  revalidatePath("/app/solutions");
+}
+
+export async function auditSiteAction(form: FormData) {
+  const { workspace } = await currentWorkspace();
+  const url = str(form, "url");
+  if (!/^(https?:\/\/)?[a-z0-9.-]+\.[a-z]{2,}(\/\S*)?$/i.test(url)) return;
+  const p = await addSiteToAudit(workspace.id, { url, name: str(form, "name") || undefined });
+  revalidatePath("/app/solutions");
+  if (p) redirect(`/app/solutions/${p.id}`);
 }

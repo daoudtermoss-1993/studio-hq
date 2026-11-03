@@ -22,6 +22,13 @@
       "when": 1793738879356,
       "tag": "0002_solutions_division",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793742992162,
+      "tag": "0003_opportunities_division",
+      "breakpoints": true
     }
   ]
 }

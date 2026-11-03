@@ -5,6 +5,7 @@ import { and, db, eq, problems, reels } from "@studio/db";
 import { dealAction, reelFromProblemAction, rerunProblem } from "@/app/actions/studio";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { CopyButton } from "@/components/CopyButton";
+import { OpportunityView } from "@/components/OpportunityView";
 import { currentWorkspace } from "@/lib/auth";
 import { getT } from "@/lib/i18n";
 
@@ -19,7 +20,8 @@ export default async function ProblemPage({ params }: { params: Promise<{ id: st
   if (!p) notFound();
   const [reel] = p.reelId ? await db.select({ number: reels.number }).from(reels).where(eq(reels.id, p.reelId)) : [];
   const q = p.qualification, s = p.solution, d = p.demo, r = p.review, o = p.outreach;
-  const busy = p.status === "new" || p.status === "solving" || (p.status === "qualified" && !s);
+  const opp = p.kind === "opportunity";
+  const busy = p.status === "new" || p.status === "solving" || (p.status === "qualified" && !(opp ? p.design : s));
   const hidden = <input type="hidden" name="problemId" value={p.id} />;
   const dealStage = ["solved", "contacted", "replied", "won", "lost"].includes(p.status);
 
@@ -30,17 +32,30 @@ export default async function ProblemPage({ params }: { params: Promise<{ id: st
       <header className="card space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <span className="chip bg-gold text-gold-ink">{t.pstatus[p.status]}</span>
-          <span className="chip bg-ink-3 text-muted">{t.track[p.track as "smb" | "technical"] ?? p.track}</span>
+          <span className="chip bg-ink-3 text-muted">{opp ? t.kindOpp : t.track[p.track as "smb" | "technical"] ?? p.track}</span>
           <span className="chip bg-ink-3 text-muted" dir="ltr">{p.source}</span>
           {p.votes != null && <span className="chip bg-ink-3 text-muted" dir="ltr">▲ {p.votes}</span>}
-          <a href={p.url} target="_blank" rel="noreferrer" className="text-sm text-sky hover:underline">{t.openSource} ↗</a>
+          <a href={opp ? p.contact || p.url : p.url} target="_blank" rel="noreferrer" className="text-sm text-sky hover:underline">{opp ? t.openMaps : t.openSource} ↗</a>
         </div>
         <h1 className="bidi font-display text-xl font-extrabold">{p.title}</h1>
-        <p className="text-sm text-muted" dir="auto">{p.author}{p.organization && ` · ${p.organization}`}</p>
-        <p className="bidi whitespace-pre-wrap text-sm">{p.body}</p>
+        {opp ? (
+          <div className="flex flex-wrap gap-4 text-sm text-muted">
+            <span className="bidi">{p.body}</span>
+            {p.website ? <a href={p.website} target="_blank" rel="noreferrer" className="text-sky hover:underline" dir="ltr">{p.website}</a> : <span className="text-coral">{t.noWebsite}</span>}
+            {p.phone && <span>{t.phone}: <b className="text-text" dir="ltr">{p.phone}</b></span>}
+            {p.rating != null && <span>{t.googleRating}: <b className="text-text" dir="ltr">★ {p.rating} ({p.reviews ?? 0})</b></span>}
+          </div>
+        ) : (
+          <>
+            <p className="text-sm text-muted" dir="auto">{p.author}{p.organization && ` · ${p.organization}`}</p>
+            <p className="bidi whitespace-pre-wrap text-sm">{p.body}</p>
+          </>
+        )}
       </header>
 
-      {q && (
+      {opp && <OpportunityView p={p} t={t} />}
+
+      {q && !opp && (
         <section className="card space-y-3">
           <h2 className="font-bold text-gold">{t.qualification}</h2>
           <div className="grid gap-3 text-sm sm:grid-cols-4">
@@ -58,7 +73,7 @@ export default async function ProblemPage({ params }: { params: Promise<{ id: st
         </section>
       )}
 
-      {s && (
+      {s && !opp && (
         <section className="card space-y-3 text-sm">
           <h2 className="font-bold text-gold">{t.solutionTitle}</h2>
           <p className="bidi text-base font-semibold">{s.summary}</p>

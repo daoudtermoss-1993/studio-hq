@@ -1,5 +1,13 @@
 import { randomUUID } from "node:crypto";
-import { boolean, index, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgEnum, pgTable, primaryKey, real, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+
+/** Starting prices (USD, Lebanon market) — owner edits them in settings. */
+export const DEFAULT_CATALOG = [
+  "speed-fix | إصلاح السرعة والموبايل | $250 | ضغط الصور، كاش و CDN، إصلاح الموبايل، تقرير قبل/بعد بالأرقام",
+  "new-site | موقع جديد سريع | $700 + $25/شهر | تصميم كامل، حجز عالواتساب، SEO محلي، استضافة وصيانة",
+  "google-profile | ملف Google والتقييمات | $150 + $40/شهر | تصليح الملف، صور، ردود على التقييمات كل أسبوع",
+  "whatsapp-booking | حجز وتذكير عالواتساب | $400 + $30/شهر | رد أوتوماتيكي، حجز مواعيد، تذكير قبل الموعد",
+].join("\n");
 
 const id = () => text("id").primaryKey().$defaultFn(() => randomUUID());
 const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
@@ -77,6 +85,10 @@ export const brandProfiles = pgTable("brand_profiles", {
   /** solutions division: which markets the engineers hunt problems in */
   solutionTracks: text("solution_tracks").array().notNull().default(["smb", "technical"]),
   techFocus: text("tech_focus").notNull().default("network automation (Cisco NSO, YANG, NETCONF/RESTCONF), AI & workflow automation"),
+  /** opportunities division: fixed-price services, one per line: id | name | price | what's included */
+  serviceCatalog: text("service_catalog").notNull().default(DEFAULT_CATALOG),
+  oppVertical: text("opp_vertical").notNull().default("عيادات أسنان"),
+  oppCity: text("opp_city").notNull().default("بيروت"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
@@ -225,10 +237,24 @@ export const problems = pgTable(
     dealValue: integer("deal_value"),
     notes: text("notes").notNull().default(""),
     reelId: text("reel_id"),
+    /** problem = someone asked for help · opportunity = we found a business we can improve (website/Google presence) */
+    kind: text("kind").notNull().default("problem"),
+    placeId: text("place_id"),
+    website: text("website").notNull().default(""),
+    phone: text("phone").notNull().default(""),
+    address: text("address").notNull().default(""),
+    rating: real("rating"),
+    reviews: integer("reviews"),
+    /** Google Places content other than place_id is cleared after this date (unless the owner contacted them) */
+    googleExpiresAt: timestamp("google_expires_at", { withTimezone: true }),
+    audit: jsonb("audit").$type<any>(),
+    design: jsonb("design").$type<any>(),
+    offer: jsonb("offer").$type<any>(),
+    previewToken: text("preview_token"),
     createdAt: createdAt(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
   },
-  (t) => [uniqueIndex("problems_ws_url_uq").on(t.workspaceId, t.url), index("problems_ws_status_idx").on(t.workspaceId, t.status)],
+  (t) => [uniqueIndex("problems_preview_uq").on(t.previewToken), index("problems_ws_place_idx").on(t.workspaceId, t.placeId), uniqueIndex("problems_ws_url_uq").on(t.workspaceId, t.url), index("problems_ws_status_idx").on(t.workspaceId, t.status)],
 );
 
 /** Remote MCP servers the engineers may use (token encrypted at rest). */

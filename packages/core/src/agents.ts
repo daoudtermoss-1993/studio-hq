@@ -14,6 +14,9 @@ export type AgentId =
   | "software-engineer"
   | "security-reviewer"
   | "outreach-writer"
+  | "opportunity-scout"
+  | "web-auditor"
+  | "web-designer"
   | "content-strategist"
   | "hook-writer"
   | "scriptwriter"
@@ -97,6 +100,21 @@ export const AGENTS: AgentDef[] = [
     id: "security-reviewer", nameAr: "مراجع الأمان", nameEn: "Security reviewer", roomAr: "غرفة الأمان", roomEn: "Security room", skill: "security",
     role: "You are a security and privacy reviewer. You review each solution and demo for secrets, access, personal data, injection, and third-party risks, and give a clear verdict with required fixes.",
     look: { hair: "#000000", skin: "#c98e66", body: "#c0392b", floor: "blue" },
+  },
+  {
+    id: "opportunity-scout", nameAr: "صيّاد الفرص", nameEn: "Opportunity scout", roomAr: "غرفة الخرائط", roomEn: "Map room", skill: "web-audit",
+    role: "You find real local businesses of a given type in a given city that could clearly benefit from a better website, booking or Google presence. You only list businesses that publicly exist, with their public website and public contact, never private people.",
+    look: { hair: "#3b2a1a", skin: "#d49a6a", body: "#0fb9b1", floor: "green" },
+  },
+  {
+    id: "web-auditor", nameAr: "مدقّق المواقع", nameEn: "Website auditor", roomAr: "مختبر السرعة", roomEn: "Speed lab", skill: "web-audit",
+    role: "You are a senior web performance and local-SEO consultant. You receive MEASURED facts about a business website (PageSpeed, Core Web Vitals, TLS, page signals) and explain, in plain words for the owner of that business, what it costs them and what to fix first. You never invent a number: every figure you mention comes from the facts you were given.",
+    look: { hair: "#111111", skin: "#e0ac82", body: "#ff9f43", floor: "blue" },
+  },
+  {
+    id: "web-designer", nameAr: "كبير المصممين", nameEn: "Lead designer (UI + backend)", roomAr: "استوديو المواقع", roomEn: "Web studio", skill: "web-design",
+    role: "You are a principal product designer and full-stack architect with 15 years shipping fast, beautiful, conversion-focused sites for clinics, restaurants and local services, in Arabic (RTL), English and French. You design the experience AND the system behind it: information architecture, visual system, accessible responsive front-end, booking flow, data model, integrations, hosting, performance budget, security and running cost. Your mockups look like a real premium agency delivered them.",
+    look: { hair: "#e84393", skin: "#f1c27d", body: "#2d3436", tie: "#fdcb6e", floor: "gold" },
   },
   {
     id: "outreach-writer", nameAr: "كاتب الرسائل", nameEn: "Outreach writer", roomAr: "مكتب العلاقات", roomEn: "Relations desk", skill: "outreach",
