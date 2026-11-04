@@ -9,7 +9,7 @@ const sec = (ms: number | null | undefined) => (ms == null ? "—" : `${(ms / 10
 
 /** Audit → before/after → design + backend → offer, for one business (problems.kind = "opportunity"). */
 export function OpportunityView({ p, t }: { p: Problem; t: T }) {
-  const a = p.audit, d = p.design, o = p.offer;
+  const a = p.audit, d = p.design, o = p.offer, pr = a?.presence;
   const psi = a?.facts?.psi;
   const metrics: [string, string, boolean | null][] = psi
     ? [
@@ -76,6 +76,34 @@ export function OpportunityView({ p, t }: { p: Problem; t: T }) {
             })}
           </ul>
           {a.report.quickWins?.length > 0 && <p className="bidi text-sm"><span className="text-muted">Quick wins: </span>{a.report.quickWins.join(" · ")}</p>}
+        </section>
+      )}
+
+      {pr && (
+        <section className="card space-y-4 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-bold text-gold">{t.presenceTitle}</h2>
+            <span className="chip bg-ink-3 text-text">{t.primaryChannel}: <span dir="auto">{pr.primaryChannel}</span></span>
+          </div>
+          {pr.profiles.length > 0 && (
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {pr.profiles.map((x: { platform: string; url: string; kind: string; does: string; active: string }) => (
+                <li key={x.platform + x.url} className="flex items-start gap-3 rounded-lg border border-line p-3">
+                  <span className="chip bg-sky text-ink">{t.pkind[x.kind as keyof typeof t.pkind] ?? x.kind}</span>
+                  <div className="min-w-0">
+                    {x.url ? <a href={x.url} target="_blank" rel="noreferrer" className="font-semibold hover:underline" dir="auto">{x.platform}</a> : <b dir="auto">{x.platform}</b>}
+                    <p className="bidi text-muted">{x.does}{x.active === "no" ? " · ✕" : ""}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          {a.facts?.html?.platforms?.length > 0 && <p className="text-xs text-muted">{t.linkedFromSite}: <span dir="ltr">{a.facts.html.platforms.join(", ")}</span></p>}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div><div className="label">{t.alreadyCovered}</div><ul className="bidi list-disc space-y-0.5 ps-5">{pr.alreadyCovered.map((x: string) => <li key={x}>{x}</li>)}</ul></div>
+            <div><div className="label">{t.gapsLabel}</div><ul className="bidi list-disc space-y-0.5 ps-5">{pr.gaps.map((x: string) => <li key={x}>{x}</li>)}</ul></div>
+          </div>
+          <p className="bidi rounded-lg bg-ink px-3 py-2"><span className="text-muted">{t.positioningLabel}: </span>{pr.positioning}</p>
         </section>
       )}
 

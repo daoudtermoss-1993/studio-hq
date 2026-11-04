@@ -395,3 +395,19 @@ export const CampaignOut = z.object({
 });
 
 export const ClientReportOut = z.object({ headline: z.string(), summary: z.string(), wins: z.array(z.string()).default([]), issues: z.array(z.string()).default([]), next: z.array(z.string()).default([]) });
+
+/** What the business already uses online, so offers complement it instead of selling it twice. */
+export const PresenceOut = z.object({
+  profiles: z
+    .array(z.object({
+      platform: z.string(), url: z.string().default(""),
+      kind: z.enum(["booking", "telehealth", "directory", "social", "messaging", "maps", "website"]),
+      does: z.string(), active: z.enum(["yes", "no", "unknown"]).default("unknown"),
+    }))
+    .max(12),
+  primaryChannel: z.string(),
+  alreadyCovered: z.array(z.string()).default([]),
+  gaps: z.array(z.string()).default([]),
+  positioning: z.string(),
+});
+export type Presence = z.infer<typeof PresenceOut>;

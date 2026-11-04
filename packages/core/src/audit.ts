@@ -28,6 +28,8 @@ export interface HtmlSignals {
   mixedContent: number;
   generator: string;
   socials: string[];
+  /** booking / telehealth / directory / social platforms the site links to (drapp, vezeeta, calendly, instagram…) */
+  platforms: string[];
   textSample: string;
 }
 
@@ -145,6 +147,14 @@ export async function safeFetch(raw: string, timeoutMs = 15_000) {
 
 // ---------- pure analysis ----------
 
+export const PLATFORM_PATTERNS: [string, RegExp][] = [
+  ["drapp", /drapp\.me/i], ["vezeeta", /vezeeta\.com/i], ["okadoc", /okadoc\.com/i], ["doctify", /doctify\.com/i], ["whatclinic", /whatclinic\.com/i],
+  ["calendly", /calendly\.com/i], ["cal.com", /cal\.com\//i], ["setmore", /setmore\.com/i], ["booksy", /booksy\.com/i], ["fresha", /fresha\.com/i],
+  ["linktree", /linktr\.ee/i], ["google-maps", /g\.page|maps\.app\.goo\.gl|goo\.gl\/maps|google\.[a-z.]+\/maps/i], ["whatsapp", /wa\.me|api\.whatsapp\.com/i],
+  ["instagram", /instagram\.com/i], ["facebook", /facebook\.com|fb\.me/i], ["tiktok", /tiktok\.com/i],
+];
+export const platformsIn = (links: string[]) => PLATFORM_PATTERNS.filter(([, re]) => links.some((l) => re.test(l))).map(([id]) => id);
+
 const attr = (tag: string, name: string) => tag.match(new RegExp(`${name}\\s*=\\s*["']([^"']*)["']`, "i"))?.[1] ?? "";
 
 export function analyzeHtml(html: string, pageUrl: string): HtmlSignals {
@@ -182,6 +192,7 @@ export function analyzeHtml(html: string, pageUrl: string): HtmlSignals {
     mixedContent: https ? (head.match(/\b(?:src|href)\s*=\s*["']http:\/\/[^"']+\.(?:js|css|png|jpe?g|gif|webp|svg)/gi) ?? []).length : 0,
     generator: meta("generator").slice(0, 80),
     socials: [...new Set(links.map((l) => l.match(/(facebook|instagram|tiktok|linkedin|youtube)\.com/i)?.[1]?.toLowerCase()).filter(Boolean) as string[])],
+    platforms: platformsIn(links),
     textSample: text.slice(0, 1500),
   };
 }
@@ -381,7 +392,7 @@ export function mockSiteFacts(url: string): SiteFacts {
       viewport: healthy, lang: healthy ? "en" : "", h1Count: healthy ? 1 : 0, imgCount: 14, imgNoAlt: healthy ? 0 : 11, scriptCount: healthy ? 3 : 22,
       whatsapp: healthy, tel: true, booking: healthy, form: healthy, mapsEmbed: true, jsonLdTypes: healthy ? ["Dentist"] : [], openGraph: healthy,
       copyrightYear: healthy ? new Date().getFullYear() : 2019, mixedContent: healthy ? 0 : 3, generator: healthy ? "" : "WordPress 5.2",
-      socials: ["facebook", "instagram"], textSample: "Dental clinic. Implants, whitening, orthodontics. Call us.",
+      socials: ["facebook", "instagram"], platforms: healthy ? ["whatsapp", "instagram", "facebook", "calendly"] : ["instagram", "facebook", "drapp"], textSample: "Dental clinic. Implants, whitening, orthodontics. Call us.",
     },
     psi: {
       strategy: "mobile", performance: healthy ? 94 : 23, accessibility: healthy ? 92 : 61, seo: healthy ? 95 : 58, bestPractices: healthy ? 96 : 52,

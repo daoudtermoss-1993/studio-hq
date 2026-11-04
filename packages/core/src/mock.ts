@@ -134,6 +134,23 @@ export function mockAgent(agent: string, prompt: string): unknown {
       };
     case "security-reviewer":
       return { verdict: "approve", issues: [{ severity: "medium", issue: "رقم الزبون بينحفظ بالجدول", fix: "حذف الأرقام بعد 30 يوم" }], summary: "آمن للديمو" };
+    case "presence": {
+      const name = prompt.match(/BUSINESS: (.+)/)?.[1]?.trim() ?? "";
+      const linked = prompt.match(/PLATFORMS THEIR SITE LINKS TO \(measured\): (.+)/)?.[1] ?? "";
+      const map = prompt.match(/MAP LISTING: (\S+)/)?.[1] ?? "";
+      const profiles = [
+        ...(map.startsWith("http") ? [{ platform: "Google Maps", url: map, kind: "maps", does: "يلّي بيدوّر عليهن عالخريطة بيلاقيهن", active: "yes" }] : []),
+        ...(/drapp/.test(linked) ? [{ platform: "DrApp", url: "https://drapp.me/", kind: "telehealth", does: "استشارات أونلاين وحجز عبر التطبيق", active: "unknown" }] : []),
+        ...(/instagram/.test(linked) ? [{ platform: "Instagram", url: "https://www.instagram.com/", kind: "social", does: "صور الحالات والتواصل بالرسائل", active: "yes" }] : []),
+        ...(/calendly/.test(linked) ? [{ platform: "Calendly", url: "https://calendly.com/", kind: "booking", does: "حجز أونلاين", active: "yes" }] : []),
+      ];
+      return {
+        profiles, primaryChannel: "WhatsApp و Instagram",
+        alreadyCovered: profiles.filter((x) => x.kind === "booking" || x.kind === "telehealth").map((x) => `${x.platform}: ${x.does}`),
+        gaps: ["ما في رد عالواتساب برّا الدوام", "ما في موقع بإسمن بيبيّن بـ Google", "ما في تذكير بالمواعيد"],
+        positioning: `${name}: منشتغل مع الأدوات يلّي عندن، ومنزيد الرد عالواتساب والموقع بإسمن`,
+      };
+    }
     case "knowledge-engineer":
       return mockKnowledge(prompt);
     case "receptionist":

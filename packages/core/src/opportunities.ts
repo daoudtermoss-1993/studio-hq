@@ -5,7 +5,7 @@ import { env } from "./env";
 import { brandOf } from "./helpers";
 import { checkMockup, sanitizeMockup, searchPlaces, type Business } from "./places";
 import { enqueue } from "./queue";
-import { AuditReportOut, DesignOut, OutreachOut, ScoutOut } from "./schemas";
+import { AuditReportOut, DesignOut, OutreachOut, PresenceOut, ScoutOut, type Presence } from "./schemas";
 import { ask, log, runAgent } from "./team";
 
 /**
@@ -139,15 +139,27 @@ export async function auditOpportunity(problemId: string) {
       facts = env.aiProvider === "mock" && process.env.AUDIT_LIVE !== "1" ? mockSiteFacts(p.website) : await inspectSite(p.website);
     }
     const score = facts ? scoreSite(facts) : { score: 0, areas: { speed: 0, mobile: 0, trust: 0, conversion: 0, seo: 0 }, findings: [{ id: "no-site", severity: "critical" as const, area: "conversion" as const, evidence: "no website" }] };
+    await h.setTool("Presence check · WebSearch");
+    const presence = await ask(h, p.workspaceId, brand, "web-auditor",
+      `BUSINESS: ${p.title}\nTYPE/CITY: ${p.body}\nWEBSITE: ${p.website || "(none)"}\nPHONE: ${p.phone || "(unknown)"}\nMAP LISTING: ${p.contact || "-"}
+PLATFORMS THEIR SITE LINKS TO (measured): ${facts?.html?.platforms?.join(", ") || "(none / no site)"}
+Find what this business ALREADY uses online before we sell anything: booking and telehealth platforms (DrApp, Vezeeta, Okadoc, Doctify…),
+directories, its Google Maps listing, Instagram/Facebook/TikTok, WhatsApp. Search the web for its exact name + city. For each profile you
+can confirm (it must be clearly THIS business): platform, url, kind, what it does for them, and whether it looks active. Then: the channel
+patients most likely use to reach them, what is already covered (we must not sell it again), the real gaps our services could fill, and a
+one-line positioning that complements their existing tools instead of replacing them. Public business information only.`,
+      PresenceOut, { webSearch: true, tier: "fast", mockAs: "presence" });
     const r = await ask(h, p.workspaceId, brand, "web-auditor",
       `${factsBlock(p, facts, score)}
+EXISTING PRESENCE (what they already use): ${JSON.stringify(presence)}
 OUR SERVICES (pick the one package that fixes the biggest money leak; use its id): ${catalog.map((c) => `${c.id}: ${c.name} (${c.price}) — ${c.includes}`).join(" | ")}
 Write the audit for the business owner: a one-line headline with the single most important measured number, a short summary, the top issues
 (use the finding ids above; each with a plain explanation and what it costs them), quick wins, the recommended package, and whether this is
-worth an offer (false if the site is already good, i.e. score ≥ 80 with no critical/high findings, or if the business looks closed).
+worth an offer (false if the site is already good, i.e. score ≥ 80 with no critical/high findings, or if the business looks closed, or if
+everything we sell is already covered by tools they actively use). Never recommend a package that duplicates "alreadyCovered".
 Only use numbers that appear in the facts. Also say the main language of their site/audience (ar, en, fr, or mixed).`,
       AuditReportOut, { tier: "smart" });
-    return { facts, score, report: r };
+    return { facts, score, presence, report: r };
   });
   const serious = report.score.findings.some((f) => f.severity === "critical" || f.severity === "high");
   const ok = report.report.worthIt && (report.score.score < 80 || serious);
@@ -172,12 +184,14 @@ export async function designOpportunity(problemId: string) {
   const catalog = parseCatalog(brand.serviceCatalog);
   const ws = p.workspaceId;
   await update(problemId, { status: "solving" });
-  const audit = p.audit as { facts: SiteFacts | null; score: ReturnType<typeof scoreSite>; report: import("./schemas").AuditReport };
+  const audit = p.audit as { facts: SiteFacts | null; score: ReturnType<typeof scoreSite>; presence?: Presence; report: import("./schemas").AuditReport };
 
   const design = await runAgent(ws, "web-designer", `تصميم: ${p.title}`.slice(0, 120), null, async (h) => {
     const base = `${factsBlock(p, audit.facts, audit.score)}
 AUDIT: ${JSON.stringify(audit.report)}
 WHAT THEIR CURRENT SITE SAYS (facts you may reuse): ${audit.facts?.html?.textSample ?? "(no website)"}
+WHAT THEY ALREADY USE: ${JSON.stringify(audit.presence ?? null)} — link their active profiles (e.g. their booking platform, Instagram) from
+the new site and complement them; never design something that competes with a tool they actively use.
 
 Design their new website as a principal designer + full-stack architect would for a paying client.
 1) The visual system (concept, palette with hex, typography), sitemap, and audience.
@@ -225,10 +239,11 @@ Design their new website as a principal designer + full-stack architect would fo
     ask(h, ws, brand, "outreach-writer",
       `${factsBlock(p, null, null)}
 AUDIT HEADLINE: ${audit.report.headline}\nTOP ISSUES: ${audit.report.topIssues.map((i) => `${i.plain} (${i.impact})`).join(" · ")}
+WHAT THEY ALREADY USE: ${audit.presence ? `${audit.presence.primaryChannel}; covered: ${audit.presence.alreadyCovered.join(", ")}; positioning: ${audit.presence.positioning}` : "-"}
 CONCEPT LINK (private, unlisted): ${offer.previewUrl}\nPACKAGE (for the owner, mention price only if natural): ${offer.name} ${offer.price}
 Write ONE personal WhatsApp message to the clinic/business (in the language of their audience: ${audit.report.siteLanguage}), from the
 owner, as a local professional: one measured fact about their site, what it likely costs them, that we already sketched a new homepage
-for them (the link), and one low-commitment question. No shaming, no hype, under 90 words. Plus one follow-up. Channel: WhatsApp business
+for them (the link), and one low-commitment question. If they already use a platform, say we work alongside it. No shaming, no hype, under 90 words. Plus one follow-up. Channel: WhatsApp business
 number${p.phone ? ` ${p.phone}` : ""} or the contact form/Instagram on their site. publicReply stays empty.`, OutreachOut),
   );
   await update(problemId, { outreach: { ...outreach, publicReply: "" }, status: "solved" });

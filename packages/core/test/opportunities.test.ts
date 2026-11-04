@@ -58,6 +58,9 @@ describe("audit engine (measured, deterministic)", () => {
     const good = analyzeHtml(GOOD_PAGE, "https://smile.example/");
     expect(good).toMatchObject({ viewport: true, whatsapp: true, tel: true, booking: true, h1Count: 1, imgNoAlt: 0, lang: "en", openGraph: true });
     expect(good.jsonLdTypes).toContain("Dentist");
+    expect(good.platforms).toEqual(expect.arrayContaining(["whatsapp", "cal.com"]));
+    expect(analyzeHtml('<a href="https://drapp.me/d/lb/dentistry/x">DrApp</a><a href="https://www.instagram.com/x">IG</a>', "https://x.example/").platforms)
+      .toEqual(expect.arrayContaining(["drapp", "instagram"]));
     const slow = analyzeHtml(SLOW_PAGE, "https://old.example/");
     expect(slow).toMatchObject({ viewport: false, whatsapp: false, tel: false, h1Count: 0, imgNoAlt: 4, copyrightYear: 2018, mixedContent: 1 });
   });
@@ -132,6 +135,9 @@ describe("opportunities pipeline (mock AI, real DB)", () => {
     expect(slow.status).toBe("solved");
     expect(slow.audit.score.score).toBeLessThan(50);
     expect(slow.audit.report.recommendedPackage).toBe("speed-fix");
+    expect(slow.audit.presence.profiles.map((x: any) => x.platform)).toEqual(expect.arrayContaining(["Google Maps", "DrApp", "Instagram"]));
+    expect(slow.audit.presence.alreadyCovered.join(" ")).toMatch(/DrApp/); // we never sell what they already have
+    expect(slow.audit.presence.positioning).toBeTruthy();
     expect(checkMockup(slow.design.html)).toEqual([]);
     expect(slow.design.backend.stack.length).toBeGreaterThan(1);
     expect(slow.offer.price).toBe("$250");
