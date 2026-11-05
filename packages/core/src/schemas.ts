@@ -411,3 +411,113 @@ export const PresenceOut = z.object({
   positioning: z.string(),
 });
 export type Presence = z.infer<typeof PresenceOut>;
+
+// ---------- consulting division ----------
+
+export const AccountResearchOut = z.object({
+  summary: z.string(),
+  whatTheyDo: z.string(),
+  size: z.string().default(""),
+  systems: z.array(z.string()).default([]),
+  signals: z.array(z.object({ signal: z.string(), source: z.string() })).max(10).default([]),
+  likelyPains: z.array(z.object({ pain: z.string(), why: z.string() })).max(8).default([]),
+  firstCallQuestions: z.array(z.string()).min(3).max(10),
+  redFlags: z.array(z.string()).default([]),
+  sources: z.array(z.string()).default([]),
+});
+
+export const InterviewOut = z.object({
+  summary: z.string(),
+  tasks: z
+    .array(z.object({
+      task: z.string(),
+      who: z.string().default(""),
+      timesPerMonth: z.number().nonnegative().nullable(),
+      minutesEach: z.number().nonnegative().nullable(),
+      saidBy: z.string().default(""),
+      quote: z.string().default(""),
+    }))
+    .max(12),
+  hourlyCost: z.number().nonnegative().nullable().default(null),
+  systems: z.array(z.string()).default([]),
+  data: z.array(z.string()).default([]),
+  constraints: z.array(z.string()).default([]),
+  risks: z.array(z.string()).default([]),
+  openQuestions: z.array(z.string()).default([]),
+});
+
+export const OppInputs = z.object({
+  tasksPerMonth: z.number().nonnegative(),
+  minutesSaved: z.number().nonnegative(),
+  hourlyCost: z.number().nonnegative(),
+  runningMonthly: z.number().nonnegative().default(0),
+  setupCost: z.number().nonnegative().default(0),
+});
+
+export const OpportunityMapOut = z.object({
+  summary: z.string(),
+  items: z
+    .array(z.object({
+      id: z.string().regex(/^[a-z0-9-]+$/),
+      title: z.string(),
+      problem: z.string(),
+      solution: z.string(),
+      value: z.number().min(1).max(5),
+      ease: z.number().min(1).max(5),
+      speed: z.number().min(1).max(5),
+      inputs: OppInputs,
+      /** where each input came from: "interview: <who>" or "assumption" */
+      inputSources: z.object({ tasksPerMonth: z.string(), minutesSaved: z.string(), hourlyCost: z.string() }),
+      dataNeeded: z.array(z.string()).default([]),
+      risks: z.array(z.string()).default([]),
+      redFlags: z.array(z.string()).default([]),
+    }))
+    .min(1)
+    .max(10),
+});
+
+export const ProposalOut = z.object({
+  title: z.string(),
+  problemInTheirWords: z.string(),
+  approach: z.string(),
+  deliverables: z.array(z.string()).min(1),
+  timeline: z.array(z.object({ when: z.string(), what: z.string() })).min(1),
+  weNeed: z.array(z.string()).default([]),
+  outOfScope: z.array(z.string()).default([]),
+  successMeasure: z.string(),
+  coverEmail: z.object({ subject: z.string(), body: z.string() }),
+});
+
+export const PilotPlanOut = z.object({
+  weeks: z.array(z.object({ week: z.string(), goal: z.string(), tasks: z.array(z.string()) })).min(2).max(8),
+  metrics: z
+    .array(z.object({
+      key: z.string().regex(/^[a-z0-9-]+$/),
+      name: z.string(),
+      unit: z.string(),
+      /** minutes-per-task and tasks-per-month feed the realized-saving formula */
+      kind: z.enum(["minutes-per-task", "tasks-per-month", "other"]),
+      higherIsBetter: z.boolean(),
+      howToMeasure: z.string(),
+    }))
+    .min(1)
+    .max(6),
+  dataAccess: z.array(z.string()).default([]),
+  humanInLoop: z.string(),
+  rollback: z.string(),
+  risks: z.array(z.string()).default([]),
+});
+
+export const PilotReportOut = z.object({
+  headline: z.string(),
+  wins: z.array(z.string()).default([]),
+  issues: z.array(z.string()).default([]),
+  next: z.string(),
+  clientMessage: z.string(),
+});
+
+export type AccountResearch = z.infer<typeof AccountResearchOut>;
+export type InterviewSynthesis = z.infer<typeof InterviewOut>;
+export type OpportunityMap = z.infer<typeof OpportunityMapOut>;
+export type Proposal = z.infer<typeof ProposalOut>;
+export type PilotPlan = z.infer<typeof PilotPlanOut>;

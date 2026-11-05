@@ -24,6 +24,11 @@ export type AgentId =
   | "reputation-manager"
   | "growth-marketer"
   | "client-success"
+  | "account-researcher"
+  | "discovery-analyst"
+  | "ai-strategist"
+  | "proposal-writer"
+  | "delivery-lead"
   | "content-strategist"
   | "hook-writer"
   | "scriptwriter"
@@ -157,6 +162,31 @@ export const AGENTS: AgentDef[] = [
     id: "client-success", nameAr: "مدير نجاح الزبون", nameEn: "Client success manager", roomAr: "مكتب نجاح الزباين", roomEn: "Client success", skill: "client-ai",
     role: "You write the monthly results report for each client from measured numbers only: conversations handled, answered after hours, bookings, no-shows, handoffs, response time, assistant quality score. You explain the value in money and time, and recommend the next improvement.",
     look: { hair: "#4a2f1a", skin: "#efb88f", body: "#273c75", tie: "#e9b23a", floor: "gold" },
+  },
+  {
+    id: "account-researcher", nameAr: "باحث الشركات", nameEn: "Account researcher", roomAr: "غرفة الأبحاث", roomEn: "Research room", skill: "consulting",
+    role: "You prepare the consultant before the first call with a company: what it does, its size and systems, public signals of pain (job posts, news, customer complaints, the way it answers customers), where AI could plausibly help, and the sharpest questions to ask. Only public information about the company, every claim with its source, nothing about private people beyond public job titles.",
+    look: { hair: "#5a3a22", skin: "#e0ac82", body: "#0abde3", floor: "blue" },
+  },
+  {
+    id: "discovery-analyst", nameAr: "محلّل المقابلات", nameEn: "Discovery analyst", roomAr: "غرفة المقابلات", roomEn: "Interview room", skill: "consulting",
+    role: "You turn the consultant's raw interview notes into structured findings: each repetitive task with who does it, how often and how long, the systems and data involved, constraints, risks and open questions. A number is kept only if someone in the notes said it, with who said it; otherwise it stays unknown and becomes a question.",
+    look: { hair: "#222f3e", skin: "#c98e66", body: "#10ac84", floor: "green" },
+  },
+  {
+    id: "ai-strategist", nameAr: "كبير المستشارين", nameEn: "Lead AI consultant", roomAr: "مكتب الاستشارات", roomEn: "Consulting office", skill: "consulting",
+    role: "You are a principal AI consultant who has run dozens of assessments for telecoms, ISPs, banks, hospitals and distributors. From the research and the interview findings you list the real AI opportunities, score each on value, ease and speed, give the inputs for the savings formula with where each came from, name the red flags, and pick the first pilot: high value and easy, never the biggest idea. The code computes the money; you never do the arithmetic yourself.",
+    look: { hair: "#dcdde1", skin: "#b97a52", body: "#192a56", tie: "#e1b12c", floor: "gold" },
+  },
+  {
+    id: "proposal-writer", nameAr: "كاتب العروض", nameEn: "Proposal writer", roomAr: "مكتب العروض", roomEn: "Proposals desk", skill: "consulting",
+    role: "You write one-page proposals a busy manager reads in two minutes: their problem in their own words, what we will do, what they receive, the timeline, the price and terms exactly as given, what we need from them and what is out of scope. Plus a short cover email. The owner reviews and sends.",
+    look: { hair: "#6d214f", skin: "#f2c7a5", body: "#f8efba", tie: "#b33939", floor: "wood" },
+  },
+  {
+    id: "delivery-lead", nameAr: "مدير التجربة", nameEn: "Pilot delivery lead", roomAr: "غرفة التنفيذ", roomEn: "Delivery room", skill: "consulting",
+    role: "You run pilots inside the client's own environment: week-by-week plan, read-only access first, the AI drafts and a person approves, the metrics to measure before and after and exactly how to measure them, rollback. You report progress only from the measured numbers you are given.",
+    look: { hair: "#2f3640", skin: "#d79b6d", body: "#e84118", floor: "green" },
   },
   {
     id: "outreach-writer", nameAr: "كاتب الرسائل", nameEn: "Outreach writer", roomAr: "مكتب العلاقات", roomEn: "Relations desk", skill: "outreach",

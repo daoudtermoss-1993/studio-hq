@@ -7,6 +7,7 @@ export * from "./brief";
 export * from "./care";
 export * from "./clients";
 export * from "./connectors";
+export * from "./consulting";
 export * from "./env";
 export * from "./jobs";
 export * from "./levels";

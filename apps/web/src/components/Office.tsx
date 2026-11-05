@@ -131,7 +131,7 @@ export function Office({ initial, locale, labels, poll = true }: { initial: Offi
     "fact-checker", "booth", "digital-twin", "video-editor", "caption-writer", "cover-designer", "scheduler", "repurposer",
     "analyst", "community-manager", "problem-hunter", "chief-engineer", "automation-engineer", "ai-engineer",
     "network-engineer", "software-engineer", "security-reviewer", "outreach-writer", "opportunity-scout", "web-auditor", "web-designer", "knowledge-engineer", "receptionist", "qa-engineer",
-    "care-coordinator", "reputation-manager", "growth-marketer", "client-success", "library", "meeting"];
+    "care-coordinator", "reputation-manager", "growth-marketer", "client-success", "account-researcher", "discovery-analyst", "ai-strategist", "proposal-writer", "delivery-lead", "library", "meeting"];
   const onAir = s.booth.toRecord > 0;
   const dateFmt = (iso: string) => new Date(iso).toLocaleDateString(locale === "ar" ? "ar-LB" : "en-GB", { weekday: "long", day: "numeric", month: "short" });
 

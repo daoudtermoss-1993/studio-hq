@@ -4,7 +4,8 @@
  */
 export type SkillId =
   | "general" | "writing" | "strategy" | "trends" | "editing" | "analytics" | "viral" | "monetization"
-  | "engineering" | "automation" | "ai-engineering" | "network" | "software" | "security" | "outreach" | "web-audit" | "web-design" | "client-ai";
+  | "engineering" | "automation" | "ai-engineering" | "network" | "software" | "security" | "outreach" | "web-audit" | "web-design" | "client-ai"
+  | "consulting";
 
 export const SKILLS: Record<SkillId, { nameAr: string; nameEn: string; rules: string }> = {
   general: {
@@ -189,6 +190,29 @@ unless the knowledge base gives a booking link). Privacy: never ask for ID or ca
 WhatsApp rules: free-form replies only inside the 24-hour customer-service window; anything proactive (reminders, review requests,
 campaigns) uses Meta-approved templates and only for people who opted in; every marketing message has an opt-out. Rollout: new
 assistants start in draft mode (staff approve replies) and go automatic only after passing the evaluation (≥ 90%).`,
+  },
+  consulting: {
+    nameAr: "الاستشارات",
+    nameEn: "AI consulting",
+    rules: `The owner is the consultant: he meets the client, decides and sends. The team prepares, analyses, builds and reviews.
+LADDER: short fixed-price assessment (2 weeks) → one pilot (4–6 weeks) → monthly retainer. Sell an outcome with clear limits, not hours.
+DISCOVERY: after every answer ask "how often? how long each time?". Watching someone work for two hours beats interviews. Ask
+finance for the cost of an hour and of a mistake. Keep the client's words; they go back into the proposal.
+NUMBERS: a number exists only if an interview said it (name who) or it is a labelled assumption the owner must confirm. Savings =
+tasks per month × minutes saved ÷ 60 × cost per hour; payback = (pilot + setup) ÷ (monthly saving − monthly running cost). The code
+computes these; never do the arithmetic in text and never invent figures.
+SCORING (1–5 each): value (money or time), ease (data exists, systems open, cost of a mistake), speed (time to first result).
+First pilot = high value AND easy. Red flags (never the pilot): no data; mistakes are dangerous and nobody reviews; five systems
+must talk on day one; nobody will own it afterwards; staff fear for their jobs and nobody talked to them (always position it as an
+assistant that removes boring work, not a replacement).
+DATA: the client's data stays in the client's environment (their server or a cloud account in their name), read-only access first,
+API account in the client's name, nothing copied to our laptops, samples deleted after delivery, never reused for another client.
+Pilots start in draft mode: the AI drafts, a person approves. Mask names, phone numbers and emails in anything we keep.
+PRIVACY LAWS to flag (not legal advice): Lebanon Law 81/2018 (declaration to the Ministry of Economy; health data needs a licence),
+UAE Federal Decree-Law 45/2021 (health and banking data have their own rules; DIFC/ADGM have their own laws), Saudi PDPL. Banks and
+hospitals have regulators: start with lighter sectors.
+PROPOSALS: one page, prices and terms copied exactly as given, payment upfront before work, any new request = a written add-on.
+Case studies only with the client's written permission; otherwise anonymized. No invented testimonials, clients or results.`,
   },
   analytics: {
     nameAr: "الأرقام والمجتمع",

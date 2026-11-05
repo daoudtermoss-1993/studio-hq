@@ -25,7 +25,14 @@ export type JobType =
   | "review-replies"
   | "client-campaign"
   | "client-report"
-  | "client-reminders";
+  | "client-reminders"
+  | "research-account"
+  | "synthesize-interview"
+  | "map-opportunities"
+  | "write-proposal"
+  | "build-demo"
+  | "plan-pilot"
+  | "pilot-report";
 
 /** Real-time jobs (a customer is waiting): never wait behind a workspace's long jobs, and get their own worker lane. */
 export const FAST_JOBS: JobType[] = ["receptionist-reply"];

@@ -60,6 +60,7 @@ export function BrandForm({ t, brand, studioName, submit, action }: {
         </div>
       </fieldset>
       {field("serviceCatalog", <textarea className="input" id="serviceCatalog" name="serviceCatalog" rows={4} dir="auto" defaultValue={brand?.serviceCatalog} />, true)}
+      {field("consultingCatalog", <textarea className="input" id="consultingCatalog" name="consultingCatalog" rows={3} dir="auto" defaultValue={brand?.consultingCatalog} />, true)}
       {field("techFocus", <input className="input" id="techFocus" name="techFocus" dir="auto" defaultValue={brand?.techFocus} />, true)}
       <fieldset className="space-y-3 rounded-xl border border-line p-4 sm:col-span-2">
         <legend className="label px-1">{f.presenterMode}</legend>

@@ -12,6 +12,7 @@ const TOPICS = [
 ];
 import { mockEvalSet, mockJudge, mockKnowledge, mockReceptionist } from "./mock-clients";
 import { mockHomepage } from "./mock-site";
+import { mockConsultingDemo, mockInterview, mockOpportunities, mockPilotPlan, mockPilotReport, mockProposal, mockResearch } from "./mock-consulting";
 
 let counter = 0;
 
@@ -124,7 +125,20 @@ export function mockAgent(agent: string, prompt: string): unknown {
         stack: ["WhatsApp Cloud API", "n8n", "Google Sheets"], runningCost: "حوالي $10 بالشهر", risks: ["موافقة Meta على القوالب"],
         demoPlan: "سكربت Python بيحاكي رسالة واتساب وبيطلّع الطلب منظّم", sources: ["https://developers.facebook.com/docs/whatsapp/cloud-api"],
       };
+    case "account-researcher":
+      return mockResearch(prompt);
+    case "discovery-analyst":
+      return mockInterview(prompt);
+    case "ai-strategist":
+      return mockOpportunities();
+    case "proposal-writer":
+      return mockProposal(prompt);
+    case "delivery-lead":
+      return mockPilotPlan();
+    case "pilot-report":
+      return mockPilotReport(prompt);
     case "demo":
+      if (/PILOT TO PROVE/.test(prompt)) return mockConsultingDemo();
       return {
         files: [
           { path: "order_bot.py", content: "import re\n\ndef parse(msg):\n    m = re.findall(r'(\\d+)\\s*(\\w+)', msg)\n    return [{'qty': int(q), 'item': i} for q, i in m]\n" },

@@ -48,6 +48,7 @@ function brandFields(f: FormData) {
     voiceId: str(f, "voiceId"),
     solutionTracks: f.getAll("solutionTracks").map(String).filter((x) => x === "smb" || x === "technical"),
     ...(str(f, "serviceCatalog") ? { serviceCatalog: str(f, "serviceCatalog").slice(0, 4000) } : {}),
+    ...(str(f, "consultingCatalog") ? { consultingCatalog: str(f, "consultingCatalog").slice(0, 4000) } : {}),
     techFocus: str(f, "techFocus") || "network automation (Cisco NSO, YANG, NETCONF/RESTCONF), AI & workflow automation",
   };
 }

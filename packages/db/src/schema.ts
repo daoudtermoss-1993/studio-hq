@@ -9,6 +9,13 @@ export const DEFAULT_CATALOG = [
   "whatsapp-booking | حجز وتذكير عالواتساب | $400 + $30/شهر | رد أوتوماتيكي، حجز مواعيد، تذكير قبل الموعد",
 ].join("\n");
 
+/** Consulting ladder (USD) — owner edits them in settings; each engagement can override. */
+export const DEFAULT_CONSULTING_CATALOG = [
+  "assessment | تقييم فرص الـ AI (أسبوعين) | $2,000 | مقابلات ومراقبة، تحليل الداتا، 3 لـ 5 فرص بالأرقام، demo، توصية بتجربة",
+  "pilot | تجربة تنفيذ (4 لـ 6 أسابيع) | $8,000 | حل واحد شغّال بمحيط الزبون، وضع المسودة، قياس قبل وبعد، تسليم وتدريب",
+  "retainer | اشتراك شهري | $1,000/شهر | صيانة وتحسين، تقرير شهري بالأرقام، فرصة جديدة كل 3 أشهر",
+].join("\n");
+
 const id = () => text("id").primaryKey().$defaultFn(() => randomUUID());
 const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 const ws = () => text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" });
@@ -89,6 +96,8 @@ export const brandProfiles = pgTable("brand_profiles", {
   serviceCatalog: text("service_catalog").notNull().default(DEFAULT_CATALOG),
   oppVertical: text("opp_vertical").notNull().default("عيادات أسنان"),
   oppCity: text("opp_city").notNull().default("بيروت"),
+  /** consulting division: assessment / pilot / retainer, one per line: id | name | price | what's included */
+  consultingCatalog: text("consulting_catalog").notNull().default(DEFAULT_CONSULTING_CATALOG),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 
@@ -486,6 +495,65 @@ export const clientArtifacts = pgTable(
   (t) => [index("client_artifacts_idx").on(t.clientId, t.kind, t.createdAt)],
 );
 
+// ---------- consulting division (the owner is the consultant; the team prepares, analyses, builds and reviews) ----------
+
+export const engagementStage = pgEnum("engagement_stage", ["lead", "proposal", "assessment", "pilot", "retainer", "closed", "lost"]);
+
+/** One company the owner advises: research → interviews → scored opportunities → proposal → pilot with before/after numbers. */
+export const engagements = pgTable(
+  "engagements",
+  {
+    id: id(),
+    workspaceId: ws(),
+    company: text("company").notNull(),
+    website: text("website").notNull().default(""),
+    sector: text("sector").notNull().default(""),
+    country: text("country").notNull().default(""),
+    size: text("size").notNull().default(""),
+    contactName: text("contact_name").notNull().default(""),
+    contactRole: text("contact_role").notNull().default(""),
+    /** network | linkedin | referral | freelance | event | other */
+    source: text("source").notNull().default("network"),
+    /** lebanon | gulf | remote — sets the price guidance */
+    market: text("market").notNull().default("lebanon"),
+    /** language the client reads (proposals, emails, reports) */
+    language: text("language").notNull().default("Lebanese Arabic"),
+    stage: engagementStage("stage").notNull().default("lead"),
+    /** owner's first-call notes (contact details are masked before saving) */
+    notes: text("notes").notNull().default(""),
+    research: jsonb("research").$type<any>(),
+    opportunities: jsonb("opportunities").$type<any>(),
+    proposal: jsonb("proposal").$type<any>(),
+    pilotProposal: jsonb("pilot_proposal").$type<any>(),
+    pilot: jsonb("pilot").$type<any>(),
+    pilotReport: jsonb("pilot_report").$type<any>(),
+    demo: jsonb("demo").$type<any>(),
+    review: jsonb("review").$type<any>(),
+    /** per-engagement price overrides: { assessment, pilot, retainer } */
+    prices: jsonb("prices").$type<Record<string, string>>().notNull().default({}),
+    value: integer("value"),
+    createdAt: createdAt(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+  },
+  (t) => [index("engagements_ws_stage_idx").on(t.workspaceId, t.stage)],
+);
+
+export const engagementInterviews = pgTable(
+  "engagement_interviews",
+  {
+    id: id(),
+    workspaceId: ws(),
+    engagementId: text("engagement_id").notNull().references(() => engagements.id, { onDelete: "cascade" }),
+    /** management | team | it | finance | other */
+    role: text("role").notNull(),
+    person: text("person").notNull().default(""),
+    notes: text("notes").notNull(),
+    synthesis: jsonb("synthesis").$type<any>(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("engagement_interviews_idx").on(t.engagementId, t.createdAt)],
+);
+
 export type User = typeof users.$inferSelect;
 export type Workspace = typeof workspaces.$inferSelect;
 export type BrandProfile = typeof brandProfiles.$inferSelect;
@@ -504,3 +572,6 @@ export type Booking = typeof bookings.$inferSelect;
 export type ClientContact = typeof clientContacts.$inferSelect;
 export type ClientReview = typeof clientReviews.$inferSelect;
 export type ClientArtifact = typeof clientArtifacts.$inferSelect;
+export type Engagement = typeof engagements.$inferSelect;
+export type EngagementInterview = typeof engagementInterviews.$inferSelect;
+export type EngagementStage = (typeof engagementStage.enumValues)[number];
